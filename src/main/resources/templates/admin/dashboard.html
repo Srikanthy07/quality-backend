@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard – IAST Quality Portal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/admin/css/admin.css"/>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-shield-halved"></i>
+      <div>
+        <h2>QUALITY PORTAL</h2>
+        <span>ADMIN CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="/admin/documents" class="nav-item"><i class="fas fa-file-lines"></i> Documents</a>
+      <a href="/admin/generic-templates" class="nav-item"><i class="fas fa-layer-group"></i> Generic Templates</a>
+      <a href="/admin/lessons-learned" class="nav-item"><i class="fas fa-lightbulb"></i> Lessons Learned</a>
+      <a href="/admin/assessment-checklists" class="nav-item"><i class="fas fa-clipboard-check"></i> Assessment Checklist</a>
+      <a href="/admin/master-list" class="nav-item"><i class="fas fa-list-check"></i> Master List</a>
+      <a href="/admin/users" class="nav-item"><i class="fas fa-user-shield"></i> Admin Users</a>
+      <a href="/admin/website-analytics" class="nav-item"><i class="fas fa-chart-line"></i> Website Analytics</a>
+      <a href="/admin/settings" class="nav-item"><i class="fas fa-sliders"></i> Settings</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <form th:action="@{/admin/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-navbar">
+      <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('active')">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="page-title">
+        <h1>Dashboard Overview</h1>
+      </div>
+      <div class="user-badge">
+        <div class="user-avatar">A</div>
+        <span>Administrator</span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+
+      <!-- Summary Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-info">
+            <h3>Total Documents</h3>
+            <div class="value" id="stat-total">0</div>
+          </div>
+          <div class="metric-icon navy"><i class="fas fa-folder-open"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-info">
+            <h3>ASPICE PRM</h3>
+            <div class="value" id="stat-prm">0</div>
+          </div>
+          <div class="metric-icon teal"><i class="fas fa-microchip"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-info">
+            <h3>Generic Templates</h3>
+            <div class="value" id="stat-gt">0</div>
+          </div>
+          <div class="metric-icon amber"><i class="fas fa-copy"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-info">
+            <h3>Lessons Learned</h3>
+            <div class="value" id="stat-ll">0</div>
+          </div>
+          <div class="metric-icon green"><i class="fas fa-brain"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-info">
+            <h3>Assessment Checklists</h3>
+            <div class="value" id="stat-chk">0</div>
+          </div>
+          <div class="metric-icon purple"><i class="fas fa-clipboard-list"></i></div>
+        </div>
+      </div>
+
+      <!-- Quick Action Toolbar -->
+      <div class="card-panel">
+        <div class="card-panel-header">
+          <div class="card-panel-title"><i class="fas fa-bolt" style="color:var(--teal);"></i> Quick Actions</div>
+          <div>
+            <a href="/admin/documents/upload" class="btn-teal"><i class="fas fa-upload"></i> Upload New Document</a>
+            <a href="/admin/master-list" class="btn-outline"><i class="fas fa-plus"></i> Manage Master List</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activities Feed -->
+      <div class="card-panel">
+        <div class="card-panel-header">
+          <div class="card-panel-title"><i class="fas fa-history" style="color:var(--navy);"></i> Recent Activities</div>
+        </div>
+        <div class="card-panel-body">
+          <div class="activity-list" id="activity-feed">
+            <p style="color:var(--text-muted);">Loading recent activity logs...</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/api/admin/dashboard')
+        .then(res => res.json())
+        .then(data => {
+          const stats = data.stats || {};
+          document.getElementById('stat-total').textContent = stats.totalDocuments || 0;
+          document.getElementById('stat-prm').textContent = stats.aspicePrmDocuments || 0;
+          document.getElementById('stat-gt').textContent = stats.genericTemplates || 0;
+          document.getElementById('stat-ll').textContent = stats.lessonsLearned || 0;
+          document.getElementById('stat-chk').textContent = stats.assessmentChecklists || 0;
+
+          const feed = document.getElementById('activity-feed');
+          feed.innerHTML = '';
+
+          const activities = data.activities || [];
+          if (activities.length === 0) {
+            feed.innerHTML = '<p style="color:var(--text-muted);">No activity recorded yet.</p>';
+            return;
+          }
+
+          activities.forEach(act => {
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            
+            let iconClass = 'fas fa-info-circle';
+            if (act.action.includes('Upload')) iconClass = 'fas fa-upload';
+            else if (act.action.includes('Update')) iconClass = 'fas fa-pen';
+            else if (act.action.includes('Delete')) iconClass = 'fas fa-trash';
+            else if (act.action.includes('Replace')) iconClass = 'fas fa-rotate';
+
+            const timeStr = act.timestamp ? new Date(act.timestamp).toLocaleString() : '';
+
+            item.innerHTML = `
+              <div class="activity-icon"><i class="${iconClass}"></i></div>
+              <div class="activity-content">
+                <h4>${act.action} (${act.username})</h4>
+                <p>${act.details || ''}</p>
+                <time>${timeStr}</time>
+              </div>
+            `;
+            feed.appendChild(item);
+          });
+        })
+        .catch(err => {
+          console.error('Error fetching dashboard stats:', err);
+        });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Global Search - IAST Quality Portal</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/responsive-flow.css"/>
+  <link rel="stylesheet" href="/css/search-results.css"/>
+</head>
+<body>
+  <!-- Navbar (unchanged — shared across all pages) -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar__inner">
+      <a href="/" class="navbar__brand">
+        <img src="/images/logo.webp" alt="IAST Software Solutions" class="navbar__logo"/>
+      </a>
+      <div class="navbar__spacer" aria-hidden="true"></div>
+      <ul class="navbar__nav" role="list">
+        <li><a href="/" class="navbar__link">Home</a></li>
+        <li class="navbar__dropdown">
+          <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+            Quality <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+          </a>
+          <ul class="navbar__dropdown-menu" role="menu">
+            <li><a href="/#vision" class="navbar__dropdown-item" role="menuitem">Quality Vision</a></li>
+            <li><a href="/#culture" class="navbar__dropdown-item" role="menuitem">Quality Culture</a></li>
+            <li><a href="/#gates" class="navbar__dropdown-item" role="menuitem">Quality Gates</a></li>
+            <li><a href="/#issue-management" class="navbar__dropdown-item" role="menuitem">Issue Management</a></li>
+          </ul>
+        </li>
+        <li class="navbar__dropdown">
+          <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+            Documents <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+          </a>
+          <ul class="navbar__dropdown-menu" role="menu">
+            <li><a href="/master-list.html" class="navbar__dropdown-item" role="menuitem">Master List</a></li>
+            <li><a href="/generic-template.html" class="navbar__dropdown-item" role="menuitem">Generic Templates</a></li>
+            <li><a href="/lessons-learned.html" class="navbar__dropdown-item" role="menuitem">Lessons Learned</a></li>
+          </ul>
+        </li>
+        <li><a href="/#prm" class="navbar__link">ASPICE PRM</a></li>
+        <li class="navbar__search-item">
+          <form class="navbar__search-form" role="search" action="/search.html" method="GET">
+            <div class="navbar__search-box">
+              <i class="fas fa-search navbar__search-icon" aria-hidden="true"></i>
+              <input type="text" name="search" class="navbar__search-input" placeholder="Search..." aria-label="Search documents and processes"/>
+              <button type="submit" class="navbar__search-btn" aria-label="Submit search"><i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+            </div>
+          </form>
+        </li>
+      </ul>
+      <button class="navbar__toggle" aria-label="Toggle navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <!-- Global Search results page (redesigned layout — same API, same data) -->
+  <main class="search-page" role="main">
+    <div class="search-page__container">
+
+      <header class="search-page__header">
+        <h1 class="sr-only">Global Search Results</h1>
+        <p class="search-page__query" id="search-query-line" hidden>
+          Results for <span id="search-query-term" class="search-page__query-term"></span>
+        </p>
+        <div id="search-summary" class="search-summary" role="status" aria-live="polite"></div>
+      </header>
+
+      <!-- Filter chips — built dynamically from the process groups present in the results -->
+      <nav id="search-filters" class="search-filters" aria-label="Filter results by process group" hidden></nav>
+
+      <!-- Skeleton loading state -->
+      <div id="search-skeleton" class="skeleton-grid" hidden aria-hidden="true">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+
+      <!-- Results -->
+      <section id="search-results" class="search-results" aria-live="polite"></section>
+
+      <!-- Idle state: shown before any query has been entered -->
+      <div id="search-idle" class="search-idle" role="status">
+        <i class="fas fa-magnifying-glass search-idle__icon" aria-hidden="true"></i>
+        <h2 class="search-idle__title">Search the Quality Portal</h2>
+        <p class="search-idle__hint">Use the search box in the navigation bar to find processes, templates, and documents.</p>
+      </div>
+
+      <!-- Empty state: shown when a query returns zero results -->
+      <div id="empty-state" class="empty-state" hidden>
+        <i class="fas fa-folder-open empty-state__icon" aria-hidden="true"></i>
+        <h2 class="empty-state__title">No matching results found.</h2>
+        <p class="empty-state__hint">Try searching by:</p>
+        <ul class="empty-state__list">
+          <li><i class="fas fa-hashtag" aria-hidden="true"></i> Process ID</li>
+          <li><i class="fas fa-diagram-project" aria-hidden="true"></i> Process Name</li>
+          <li><i class="fas fa-file-lines" aria-hidden="true"></i> Document Name</li>
+        </ul>
+      </div>
+
+      <!-- Error state -->
+      <div id="search-error" class="search-error" hidden>
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <p>Something went wrong while loading search results. Please try again.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="background:var(--navy);color:rgba(255,255,255,.55);text-align:center;padding:22px;font-size:.8rem;">
+    &copy; <span id="sd-year"></span> IAST Software Solutions &mdash; Quality Portal
+  </footer>
+
+  <script src="/js/global-search.js"></script>
+  <script src="/js/navigation.js"></script>
+  <script src="/js/script.js?v=8"></script>
+  <script>document.getElementById('sd-year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

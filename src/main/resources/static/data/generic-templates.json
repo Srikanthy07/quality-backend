@@ -1,0 +1,56 @@
+[
+    {
+  "id": "GEN-001",
+  "process": "GENERIC",
+  "documentName": "Generic Document Template",
+  "version": "2.0",
+  "description": "Generic template for creating project documents. Includes document information, document history, table of contents, introduction, purpose, scope, and template history sections for reuse across ASPICE process areas.",
+  "filePath": "documents/generic-template/ProjectName_GenericTemplate_2.0_Reviewed 4.docx",
+  "type": "DOCX"
+},
+{
+  "id": "GEN-002",
+  "process": "GENERIC",
+  "documentName": "Header and Footer Template",
+  "version": "2.0",
+  "description": "Standard template defining the header and footer layout for project documents, including document ID, version, status, author, owner, page numbering, and document link.",
+  "filePath": "documents/generic-template/Header_Footer_2.0_Reviewed.docx",
+  "type": "DOCX"
+},
+{
+  "id": "GEN-003",
+  "process": "GENERIC",
+  "documentName": "Document History Flowchart",
+  "version": "1.0",
+  "description": "Flowchart describing the document lifecycle from Draft to Released, including review, rework, approval, versioning guidelines, and document history maintenance process.",
+  "filePath": "documents/generic-template/Document History Flowchart_Reviewed.pptx",
+  "type": "PPTX"
+},
+{
+  "id": "GEN-004",
+  "process": "GENERIC",
+  "documentName": "Review Process Flow",
+  "version": "1.0",
+  "description": "Presentation describing the review workflow, review states, reviewer responsibilities, approval process, rework activities, and release guidelines for project work products.",
+  "filePath": "documents/generic-template/Review process flow 1.pptx",
+  "type": "PPTX"
+},
+{
+  "id": "GEN-005",
+  "process": "GENERIC",
+  "documentName": "360 Review Process in Polarion",
+  "version": "1.0",
+  "description": "Guide explaining the end-to-end 360° review process in Polarion, including baseline creation, review task management, reviewer workflow, rework process, and release procedure.",
+  "filePath": "documents/generic-template/360 Review Process in Polarion 1.pptx",
+  "type": "PPTX"
+},
+{
+  "id": "GEN-006",
+  "process": "GENERIC",
+  "documentName": "IAST PowerPoint Template",
+  "version": "1.0",
+  "description": "Standard IAST presentation template for creating technical and process-related presentations with a consistent company format and branding.",
+  "filePath": "documents/generic-template/IAST_ppt_Template_Reviewed 1.pptx",
+  "type": "PPTX"
+}
+]

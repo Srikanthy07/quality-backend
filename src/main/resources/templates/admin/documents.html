@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Document Management – Admin Portal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&amp;family=Barlow+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/admin/css/admin.css"/>
+  <style>
+    /* ---- Optimistic-lock conflict toast ---- */
+    #conflict-toast {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 10px;
+      padding: 14px 22px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      min-width: 340px;
+      max-width: 560px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      animation: slideDown 0.3s ease;
+    }
+    #conflict-toast.visible { display: flex; }
+    #conflict-toast i  { color: #d97706; font-size: 1.3rem; flex-shrink: 0; }
+    #conflict-toast p  { margin: 0; color: #78350f; font-size: 0.9rem; font-weight: 500; flex: 1; }
+    #conflict-toast button {
+      background: none; border: none; cursor: pointer;
+      color: #78350f; font-size: 1.1rem; flex-shrink: 0;
+    }
+    @keyframes slideDown {
+      from { top: -40px; opacity: 0; }
+      to   { top:  20px; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Optimistic-lock conflict toast (shown on HTTP 409) -->
+  <div id="conflict-toast">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p id="conflict-toast-msg">
+      This document was modified by another administrator. Please refresh before saving again.
+    </p>
+    <button onclick="dismissToast()" title="Dismiss">&times;</button>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-shield-halved"></i>
+      <div>
+        <h2>QUALITY PORTAL</h2>
+        <span>ADMIN CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="/admin/documents" class="nav-item active"><i class="fas fa-file-lines"></i> Documents</a>
+      <a href="/admin/generic-templates" class="nav-item"><i class="fas fa-layer-group"></i> Generic Templates</a>
+      <a href="/admin/lessons-learned" class="nav-item"><i class="fas fa-lightbulb"></i> Lessons Learned</a>
+      <a href="/admin/assessment-checklists" class="nav-item"><i class="fas fa-clipboard-check"></i> Assessment Checklist</a>
+      <a href="/admin/master-list" class="nav-item"><i class="fas fa-list-check"></i> Master List</a>
+      <a href="/admin/website-analytics" class="nav-item"><i class="fas fa-chart-line"></i> Website Analytics</a>
+      <a href="/admin/settings" class="nav-item"><i class="fas fa-sliders"></i> Settings</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <form th:action="@{/admin/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-navbar">
+      <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('active')">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="page-title">
+        <h1>Document Management System</h1>
+      </div>
+      <div class="user-badge">
+        <div class="user-avatar">A</div>
+        <span>Administrator</span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+
+      <div class="card-panel">
+        <div class="card-panel-header">
+          <div class="toolbar" style="width:100%;">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="search-input" placeholder="Search by Document Name, Process, or Category..."/>
+            </div>
+
+            <select id="category-filter" class="filter-select">
+              <option value="">All Categories</option>
+              <option value="ASPICE PRM">ASPICE PRM</option>
+              <option value="Generic Templates">Generic Templates</option>
+              <option value="Lessons Learned">Lessons Learned</option>
+              <option value="Assessment Checklist">Assessment Checklist</option>
+            </select>
+
+            <a href="/admin/documents/upload" class="btn-teal"><i class="fas fa-plus"></i> Upload Document</a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Document Name</th>
+                <th>Process ID</th>
+                <th>Process Group</th>
+                <th>Category</th>
+                <th>Version</th>
+                <th>Status</th>
+                <th>Uploaded Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="documents-tbody">
+              <tr><td colspan="8" style="text-align:center; padding:30px;">Loading documents from MySQL LONGBLOB database...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Edit Metadata Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Document Details</h3>
+        <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-form">
+          <!-- hidden field carries the edit-form's entity version -->
+    <input type="hidden" id="edit-entity-version"/>
+    <input type="hidden" id="edit-doc-id"/>
+          <div class="form-grid">
+            <div class="form-group form-group-full">
+              <label for="edit-doc-name">Document Name</label>
+              <input type="text" id="edit-doc-name" class="form-control" required/>
+            </div>
+            <div class="form-group">
+              <label for="edit-category">Category</label>
+              <select id="edit-category" class="form-control" required>
+                <option value="ASPICE PRM">ASPICE PRM</option>
+                <option value="Generic Templates">Generic Templates</option>
+                <option value="Lessons Learned">Lessons Learned</option>
+                <option value="Assessment Checklist">Assessment Checklist</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-process">Process ID</label>
+              <input type="text" id="edit-process" class="form-control" required/>
+            </div>
+            <div class="form-group">
+              <label for="edit-process-group">Process Group</label>
+              <input type="text" id="edit-process-group" class="form-control"/>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('edit-modal')">Cancel</button>
+        <button class="btn-teal" onclick="submitEditForm()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload New Version Modal -->
+  <div class="modal-overlay" id="version-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Upload New Version</h3>
+        <button class="modal-close" onclick="closeModal('version-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="version-form">
+          <input type="hidden" id="version-doc-id"/>
+          <p style="margin-bottom:14px; font-size:0.9rem; color:var(--text-muted);">
+            Uploading a new version will store the new file as a LONGBLOB, increment the version (e.g. 1.0 &rarr; 1.1), and preserve all historical revisions.
+          </p>
+          <div class="form-group">
+            <label for="version-file-input">Choose Revised File</label>
+            <input type="file" id="version-file-input" class="form-control" required/>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label for="version-remarks">Revision Remarks</label>
+            <input type="text" id="version-remarks" class="form-control" placeholder="e.g. Updated process guidelines based on QA review"/>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('version-modal')">Cancel</button>
+        <button class="btn-teal" onclick="submitVersionForm()">Upload Version</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Version History Modal -->
+  <div class="modal-overlay" id="history-modal">
+    <div class="modal-card" style="max-width:750px;">
+      <div class="modal-header">
+        <h3 id="history-modal-title">Version History</h3>
+        <button class="modal-close" onclick="closeModal('history-modal')">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height:400px; overflow-y:auto;">
+        <table class="data-table" style="font-size:0.88rem;">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Uploaded By</th>
+              <th>Uploaded Date</th>
+              <th>Remarks</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="6" style="text-align:center;">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('history-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    const csrfToken = /*[[${_csrf.token}]]*/ '';
+    const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+
+    let allDocs = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDocuments();
+
+      document.getElementById('search-input').addEventListener('input', filterAndRender);
+      document.getElementById('category-filter').addEventListener('change', filterAndRender);
+    });
+
+    function formatDocumentName(documentName) {
+      if (!documentName) return "";
+      return documentName.replace(/^(SYS|SWE|SUP|MAN|PIM|SPL|HWE|MLE)\.\d+\s*/i, "").trim();
+    }
+
+    function loadDocuments() {
+      fetch('/api/admin/dms/documents')
+        .then(res => res.json())
+        .then(docs => {
+          allDocs = Array.isArray(docs) ? docs : (docs && docs.content ? docs.content : []);
+          filterAndRender();
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('documents-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Failed to load documents from database.</td></tr>';
+        });
+    }
+
+    function filterAndRender() {
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      const cat = document.getElementById('category-filter').value;
+
+      const filtered = allDocs.filter(d => {
+        const matchesCat = !cat || d.category === cat;
+        const matchesQ = !q || 
+          (d.documentName && d.documentName.toLowerCase().includes(q)) ||
+          (d.processId && d.processId.toLowerCase().includes(q)) ||
+          (d.processGroup && d.processGroup.toLowerCase().includes(q));
+        return matchesCat && matchesQ;
+      });
+
+      const tbody = document.getElementById('documents-tbody');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">No documents match your search criteria.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(d => {
+        const tr = document.createElement('tr');
+        
+        let badgeClass = 'badge-prm';
+        if (d.category === 'Generic Templates') badgeClass = 'badge-gt';
+        else if (d.category === 'Lessons Learned') badgeClass = 'badge-ll';
+        else if (d.category === 'Assessment Checklist') badgeClass = 'badge-chk';
+
+        const updatedDate = d.updatedDate ? new Date(d.updatedDate).toLocaleDateString() : 'N/A';
+        const downloadUrl = d.latestVersionId ? `/api/public/dms/download/${d.latestVersionId}` : '#';
+        const statusBadge = `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:600;">${escapeHtml(d.status || 'APPROVED')}</span>`;
+
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(formatDocumentName(d.documentName))}</strong></td>
+          <td><code>${escapeHtml(d.processId || 'GLOBAL')}</code></td>
+          <td>${escapeHtml(d.processGroup || 'General')}</td>
+          <td><span class="badge ${badgeClass}">${escapeHtml(d.category || '')}</span></td>
+          <td><span class="badge-ver">v${escapeHtml(d.currentVersion || '1.0')}</span></td>
+          <td>${statusBadge}</td>
+          <td>${updatedDate}</td>
+          <td>
+            <div class="actions-cell">
+              <a class="action-btn" title="View / Stream" href="${downloadUrl}" target="_blank"><i class="fas fa-eye"></i></a>
+              <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
+              <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
+              <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id})"><i class="fas fa-cloud-upload-alt"></i></button>
+              <button class="action-btn" title="Edit Details" onclick="openEditModal(${d.id})"><i class="fas fa-edit"></i></button>
+              ${(d.status === 'UNDER_REVIEW') ? `
+                <button class="action-btn" title="Approve" style="color:#16a34a;" onclick="approveDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-check-circle"></i></button>
+                <button class="action-btn delete" title="Reject" onclick="rejectDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-times-circle"></i></button>
+              ` : ''}
+              <button class="action-btn delete" title="Archive / Delete" onclick="deleteDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openEditModal(id) {
+      const doc = allDocs.find(d => d.id === id);
+      if (!doc) return;
+      document.getElementById('edit-doc-id').value          = doc.id;
+      // Store the optimistic-lock token so it can be sent back in the PUT request
+      document.getElementById('edit-entity-version').value  = doc.entityVersion != null ? doc.entityVersion : '';
+      document.getElementById('edit-doc-name').value        = formatDocumentName(doc.documentName);
+      document.getElementById('edit-category').value        = doc.category || 'ASPICE PRM';
+      document.getElementById('edit-process').value         = doc.processId  || 'GLOBAL';
+      document.getElementById('edit-process-group').value   = doc.processGroup || '';
+      document.getElementById('edit-modal').classList.add('active');
+    }
+
+    function submitEditForm() {
+      const id = document.getElementById('edit-doc-id').value;
+      const entityVersionRaw = document.getElementById('edit-entity-version').value;
+
+      const bodyData = {
+        // Round-trip the lock token — Hibernate uses it in WHERE entity_version = ?
+        entityVersion: entityVersionRaw !== '' ? Number(entityVersionRaw) : null,
+        documentName:  document.getElementById('edit-doc-name').value,
+        category:      document.getElementById('edit-category').value,
+        processId:     document.getElementById('edit-process').value,
+        processGroup:  document.getElementById('edit-process-group').value
+      };
+
+      fetch(`/api/admin/dms/documents/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfHeader]: csrfToken
+        },
+        body: JSON.stringify(bodyData)
+      })
+      .then(res => {
+        if (res.ok) {
+          closeModal('edit-modal');
+          loadDocuments();
+        } else if (res.status === 409) {
+          closeModal('edit-modal');
+          showConflictToast(
+            'This document was modified by another administrator. The form has been closed — please review the latest data and try again.'
+          );
+          loadDocuments(); // Auto-reload so the admin sees current state
+        } else {
+          alert('Failed to update document details.');
+        }
+      })
+      .catch(() => alert('Network error. Please try again.'));
+    }
+
+    function openVersionModal(id) {
+      document.getElementById('version-doc-id').value = id;
+      document.getElementById('version-file-input').value = '';
+      document.getElementById('version-remarks').value = '';
+      document.getElementById('version-modal').classList.add('active');
+    }
+
+    function submitVersionForm() {
+      const id = document.getElementById('version-doc-id').value;
+      const fileInput = document.getElementById('version-file-input');
+      const remarks   = document.getElementById('version-remarks').value;
+
+      if (!fileInput.files[0]) {
+        alert('Please select a file to upload.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('remarks', remarks);
+
+      fetch(`/api/admin/dms/documents/${id}/version`, {
+        method: 'POST',
+        headers: { [csrfHeader]: csrfToken },
+        body: formData
+      })
+      .then(async res => {
+        const data = await res.json();
+        if (res.ok && data.success) {
+          closeModal('version-modal');
+          showSuccessMsg(data.message);
+          loadDocuments();
+        } else if (res.status === 409) {
+          closeModal('version-modal');
+          showConflictToast(
+            data.message || 'A concurrent version upload was detected. Only one upload succeeded. Please refresh and verify.'
+          );
+          loadDocuments();
+        } else {
+          alert(data.message || 'Failed to upload new version.');
+        }
+      })
+      .catch(err => alert('Upload failed: ' + err.message));
+    }
+
+    function openHistoryModal(id, docName) {
+      document.getElementById('history-modal-title').textContent = `Version History – ${docName}`;
+      const tbody = document.getElementById('history-tbody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading history...</td></tr>';
+      document.getElementById('history-modal').classList.add('active');
+
+      fetch(`/api/admin/dms/documents/${id}/versions`)
+        .then(res => res.json())
+        .then(versions => {
+          tbody.innerHTML = '';
+          if (!versions || versions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No version history found.</td></tr>';
+            return;
+          }
+
+          versions.forEach(v => {
+            const tr = document.createElement('tr');
+            const dateStr = v.uploadedDate ? new Date(v.uploadedDate).toLocaleString() : 'N/A';
+            const latestBadge = v.isLatest ? '<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;">Latest</span>' : '';
+            const downloadUrl = `/api/public/dms/download/${v.versionId}`;
+
+            tr.innerHTML = `
+              <td><strong>v${escapeHtml(v.version)}</strong> ${latestBadge}</td>
+              <td><span class="badge" style="background:#f1f5f9; color:#475569;">${escapeHtml(v.approvalStatus || 'APPROVED')}</span></td>
+              <td>${escapeHtml(v.uploadedBy || 'admin')}</td>
+              <td>${dateStr}</td>
+              <td>${escapeHtml(v.remarks || '-')}</td>
+              <td>
+                <a href="${downloadUrl}" target="_blank" class="action-btn" title="View"><i class="fas fa-eye"></i></a>
+                <a href="${downloadUrl}" download class="action-btn" title="Download"><i class="fas fa-download"></i></a>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Failed to load version history.</td></tr>';
+        });
+    }
+
+    function deleteDoc(id, name) {
+      if (confirm(`Are you sure you want to archive/delete "${name}"? This action moves the document to ARCHIVED.`)) {
+        fetch(`/api/admin/dms/documents/${id}`, {
+          method: 'DELETE',
+          headers: {
+            [csrfHeader]: csrfToken
+          }
+        })
+        .then(res => {
+          if (res.ok) {
+            loadDocuments();
+          } else {
+            alert('Failed to delete document.');
+          }
+        });
+      }
+    }
+
+    function approveDoc(id, name) {
+      if (confirm(`Approve document "${name}"? It will become publicly visible.`)) {
+        fetch(`/api/admin/dms/documents/${id}/approve`, {
+          method: 'POST',
+          headers: { [csrfHeader]: csrfToken }
+        })
+        .then(async res => {
+          if (res.ok) {
+            loadDocuments();
+          } else if (res.status === 409) {
+            showConflictToast(
+              'This document was modified by another administrator while approving. Please refresh and try again.'
+            );
+            loadDocuments();
+          } else {
+            alert('Failed to approve document.');
+          }
+        });
+      }
+    }
+
+    function rejectDoc(id, name) {
+      const remarks = prompt(`Reject document "${name}"?\nEnter rejection remarks (optional):`);
+      if (remarks === null) return; // User cancelled
+      fetch(`/api/admin/dms/documents/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+        body: JSON.stringify({ remarks })
+      })
+      .then(async res => {
+        if (res.ok) {
+          loadDocuments();
+        } else if (res.status === 409) {
+          showConflictToast(
+            'This document was modified by another administrator while rejecting. Please refresh and try again.'
+          );
+          loadDocuments();
+        } else {
+          alert('Failed to reject document.');
+        }
+      });
+    }
+
+    // ---- Conflict toast helpers ----
+    function showConflictToast(message) {
+      const toast = document.getElementById('conflict-toast');
+      const msg   = document.getElementById('conflict-toast-msg');
+      msg.textContent = message || 'This document was modified by another administrator. Please refresh before saving again.';
+      toast.classList.add('visible');
+      // Auto-dismiss after 8 seconds
+      setTimeout(dismissToast, 8000);
+    }
+    function dismissToast() {
+      document.getElementById('conflict-toast').classList.remove('visible');
+    }
+
+    // ---- Transient success message (replaces alert for version upload) ----
+    function showSuccessMsg(msg) {
+      // Reuse the toast with a green style for success
+      const toast = document.getElementById('conflict-toast');
+      const msgEl = document.getElementById('conflict-toast-msg');
+      toast.style.background = '#dcfce7';
+      toast.style.borderColor = '#22c55e';
+      toast.querySelector('i').style.color = '#15803d';
+      msgEl.style.color = '#14532d';
+      msgEl.textContent = msg || 'Operation completed successfully.';
+      toast.classList.add('visible');
+      setTimeout(() => {
+        dismissToast();
+        // Reset colours
+        toast.style.background = '';
+        toast.style.borderColor = '';
+        toast.querySelector('i').style.color = '';
+        msgEl.style.color = '';
+      }, 5000);
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

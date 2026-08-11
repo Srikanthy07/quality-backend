@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Master List Management – Admin Portal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/admin/css/admin.css"/>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-shield-halved"></i>
+      <div>
+        <h2>QUALITY PORTAL</h2>
+        <span>ADMIN CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="/admin/documents" class="nav-item"><i class="fas fa-file-lines"></i> Documents</a>
+      <a href="/admin/generic-templates" class="nav-item"><i class="fas fa-layer-group"></i> Generic Templates</a>
+      <a href="/admin/lessons-learned" class="nav-item"><i class="fas fa-lightbulb"></i> Lessons Learned</a>
+      <a href="/admin/assessment-checklists" class="nav-item"><i class="fas fa-clipboard-check"></i> Assessment Checklist</a>
+      <a href="/admin/master-list" class="nav-item active"><i class="fas fa-list-check"></i> Master List</a>
+      <a href="/admin/website-analytics" class="nav-item"><i class="fas fa-chart-line"></i> Website Analytics</a>
+      <a href="/admin/settings" class="nav-item"><i class="fas fa-sliders"></i> Settings</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <form th:action="@{/admin/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-navbar">
+      <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('active')">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="page-title">
+        <h1>Master List Management</h1>
+      </div>
+      <div class="user-badge">
+        <div class="user-avatar">A</div>
+        <span>Administrator</span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+
+      <div class="card-panel">
+        <div class="card-panel-header">
+          <div class="toolbar" style="width:100%;">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="search-input" placeholder="Search Master List..."/>
+            </div>
+            <button class="btn-teal" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Master List Row</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Process Group</th>
+                <th>Process ID</th>
+                <th>Process Name</th>
+                <th>Template Name</th>
+                <th>Version</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ml-tbody">
+              <tr><td colspan="7" style="text-align:center; padding:30px;">Loading Master List...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add/Edit Master List Row Modal -->
+  <div class="modal-overlay" id="ml-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="ml-modal-title">Add Master List Row</h3>
+        <button class="modal-close" onclick="closeModal('ml-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="ml-form">
+          <input type="hidden" id="ml-id"/>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ml-sno">S.No</label>
+              <input type="number" id="ml-sno" class="form-control" required/>
+            </div>
+            <div class="form-group">
+              <label for="ml-proc-id">Process ID *</label>
+              <input type="text" id="ml-proc-id" class="form-control" placeholder="e.g. SYS.2" required/>
+            </div>
+            <div class="form-group form-group-full">
+              <label for="ml-proc-name">Process Name *</label>
+              <input type="text" id="ml-proc-name" class="form-control" placeholder="e.g. System Requirements Analysis" required/>
+            </div>
+            <div class="form-group form-group-full">
+              <label for="ml-tpl-name">Template Name *</label>
+              <input type="text" id="ml-tpl-name" class="form-control" placeholder="e.g. System Requirements Specification Template" required/>
+            </div>
+            <div class="form-group">
+              <label for="ml-version">Version *</label>
+              <input type="text" id="ml-version" class="form-control" value="1.0" required/>
+            </div>
+            <div class="form-group">
+              <label for="ml-group">Process Group</label>
+              <input type="text" id="ml-group" class="form-control" placeholder="e.g. System Engineering Process Group"/>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('ml-modal')">Cancel</button>
+        <button class="btn-teal" onclick="submitMlForm()">Save Row</button>
+      </div>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    const csrfToken = /*[[${_csrf.token}]]*/ '';
+    const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+
+    let mlItems = [];
+
+    document.addEventListener('DOMContentLoaded', loadData);
+    document.getElementById('search-input').addEventListener('input', render);
+
+    function formatTemplateName(templateName) {
+    if (!templateName) return "";
+
+    return templateName.replace(
+        /^(SYS|SWE|SUP|MAN|PIM|SPL|HWE|MLE)\.\d+\s*/i,
+        ""
+    ).trim();
+}
+
+    function loadData() {
+      fetch('/api/admin/master-list')
+        .then(res => res.json())
+        .then(data => {
+          mlItems = data || [];
+          render();
+        });
+    }
+
+    function render() {
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      const tbody = document.getElementById('ml-tbody');
+      tbody.innerHTML = '';
+
+      const filtered = mlItems.filter(item => {
+        return !q ||
+          (item.processId && item.processId.toLowerCase().includes(q)) ||
+          (item.processName && item.processName.toLowerCase().includes(q)) ||
+          (item.templateName && item.templateName.toLowerCase().includes(q)) ||
+          (item.processGroup && item.processGroup.toLowerCase().includes(q));
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No Master List rows found.</td></tr>';
+        return;
+      }
+
+      filtered.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${item.sNo || (idx + 1)}</td>
+          <td>${escapeHtml(item.processGroup || '-')}</td>
+          <td><code>${escapeHtml(item.processId || '')}</code></td>
+          <td>${escapeHtml(item.processName || '')}</td>
+         <td><strong>${escapeHtml(formatTemplateName(item.templateName))}</strong></td>
+          <td><span class="badge-ver">v${escapeHtml(item.version || '1.0')}</span></td>
+          <td>
+            <div class="actions-cell">
+              <button class="action-btn" title="Edit" onclick="openEditModal(${item.id})"><i class="fas fa-edit"></i></button>
+              <button class="action-btn delete" title="Delete" onclick="deleteItem(${item.id}, '${escapeHtml(item.processId)}')"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openAddModal() {
+      document.getElementById('ml-modal-title').textContent = 'Add Master List Row';
+      document.getElementById('ml-id').value = '';
+      document.getElementById('ml-sno').value = mlItems.length + 1;
+      document.getElementById('ml-proc-id').value = '';
+      document.getElementById('ml-proc-name').value = '';
+      document.getElementById('ml-tpl-name').value = '';
+      document.getElementById('ml-version').value = '1.0';
+      document.getElementById('ml-group').value = '';
+      document.getElementById('ml-modal').classList.add('active');
+    }
+
+    function openEditModal(id) {
+      const item = mlItems.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('ml-modal-title').textContent = 'Edit Master List Row';
+      document.getElementById('ml-id').value = item.id;
+      document.getElementById('ml-sno').value = item.sNo || '';
+      document.getElementById('ml-proc-id').value = item.processId || '';
+      document.getElementById('ml-proc-name').value = item.processName || '';
+     document.getElementById('ml-tpl-name').value =
+    formatTemplateName(item.templateName);
+      document.getElementById('ml-version').value = item.version || '1.0';
+      document.getElementById('ml-group').value = item.processGroup || '';
+      document.getElementById('ml-modal').classList.add('active');
+    }
+
+    function submitMlForm() {
+      const id = document.getElementById('ml-id').value;
+      const payload = {
+        sNo: parseInt(document.getElementById('ml-sno').value) || 1,
+        processId: document.getElementById('ml-proc-id').value,
+        processName: document.getElementById('ml-proc-name').value,
+        templateName: document.getElementById('ml-tpl-name').value,
+        version: document.getElementById('ml-version').value,
+        processGroup: document.getElementById('ml-group').value
+      };
+
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/admin/master-list/${id}` : '/api/admin/master-list';
+
+      fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfHeader]: csrfToken
+        },
+        body: JSON.stringify(payload)
+      }).then(res => {
+        if (res.ok) {
+          closeModal('ml-modal');
+          loadData();
+        } else {
+          alert('Failed to save Master List row.');
+        }
+      });
+    }
+
+    function deleteItem(id, procId) {
+      if (confirm(`Delete Master List row for ${procId}?`)) {
+        fetch(`/api/admin/master-list/${id}`, {
+          method: 'DELETE',
+          headers: { [csrfHeader]: csrfToken }
+        }).then(res => { if (res.ok) loadData(); });
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

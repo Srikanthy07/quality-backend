@@ -1,0 +1,196 @@
+/* ═══════════════════════════════════════════════════════════════════
+   IAST Quality Portal — GLOBAL RESPONSIVE LAYOUT SYSTEM  v1.0
+   ───────────────────────────────────────────────────────────────────
+
+   ROOT CAUSE SUMMARY
+   ──────────────────
+   Every container on this site is hard-capped at max-width: 1200px.
+   On a 1920px screen that leaves 360px of dead space on each side
+   (30% of the viewport wasted). There are ZERO min-width / large-
+   screen rules anywhere in style.css or responsive-flow.css.
+
+   PROBLEMS FOUND (in order of severity)
+   ──────────────────────────────────────
+   1. style.css:47   .container      { max-width: 1200px }   ← bottleneck
+   2. style.css:97   .navbar__inner  { max-width: 1200px }   ← misaligns nav
+   3. style.css:133  .hero__inner    { max-width: 1200px }   ← separate hardcode
+   4. section-details.html <style>   .sd-hero__inner  { max-width: 900px }
+   5. section-details.html <style>   .sd-content      { max-width: 900px }
+   6. quality-checks.html  <style>   .qc-hero__inner  { max-width: 960px }
+   7. quality-checks.html  <style>   .qc-content      { max-width: 960px }
+   8. No large-screen (>1200px) media queries exist anywhere.
+   9. Padding is fixed at 24–28px regardless of screen width.
+  10. .navbar__inner padding differs (28px) from .container (24px).
+
+   FIX STRATEGY
+   ────────────
+   • Introduce --container-max as a CSS custom property driven by
+     clamp() so the container width scales naturally with viewport.
+   • Override .container, .navbar__inner, .hero__inner, .sd-hero__inner,
+     .sd-content, .qc-hero__inner, .qc-content in ONE place here.
+   • Side padding (--c-pad) is also fluid — larger gutter on big screens,
+     compact on mobile.
+   • All existing mobile breakpoints in style.css remain untouched.
+   • The process-flow JS scaling (flow-scale.js) is unaffected.
+
+   CONTAINER WIDTH LADDER
+   ──────────────────────
+   Viewport     Container
+   ≤ 1280px  →  1200px   (matches current design exactly)
+   1440px    →  ~1296px
+   1600px    →  ~1440px
+   1920px    →  ~1680px
+   2560px    →  1800px   (hard cap — prevents runaway on 4K)
+
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ─────────────────────────────────────────────────────────────────
+   0. OVERFLOW GUARD (site-wide, belt-and-suspenders)
+   ───────────────────────────────────────────────────────────────── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+      --container-max  drives ALL containers from one place.
+      --c-pad          consistent side padding, scales with viewport.
+   ───────────────────────────────────────────────────────────────── */
+:root {
+  /*
+    clamp(MIN, PREFERRED, MAX)
+    PREFERRED = 88vw  →  at 1365px viewport → 1200px  (unchanged feel)
+                       →  at 1920px viewport → 1690px  (near full)
+                       →  at 2048px viewport → 1800px  (hard cap)
+  */
+  --container-max : clamp(1200px, 88vw, 1800px);
+
+  /*
+    Side padding scales too — larger gutter on big screens so text
+    doesn't ever touch the viewport edge even if max-width is hit.
+  */
+  --c-pad : clamp(20px, 3vw, 56px);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   2. CORE CONTAINERS  (overrides style.css lines 47, 97, 133)
+   ───────────────────────────────────────────────────────────────── */
+
+/* All section content */
+.container {
+  width         : 100%;
+  max-width     : var(--container-max);
+  margin-left   : auto;
+  margin-right  : auto;
+  padding-left  : var(--c-pad);
+  padding-right : var(--c-pad);
+}
+
+/* Navbar — must align exactly with .container */
+.navbar__inner {
+  width         : 100%;
+  max-width     : var(--container-max);
+  margin-left   : auto;
+  margin-right  : auto;
+  padding-left  : var(--c-pad);
+  padding-right : var(--c-pad);
+}
+
+/* Hero — has its own inline max-width in style.css:133 */
+.hero__inner {
+  max-width     : var(--container-max);
+  padding-left  : var(--c-pad);
+  padding-right : var(--c-pad);
+}
+
+/* section-details.html inline styles */
+.sd-hero__inner,
+.sd-content {
+  max-width     : var(--container-max);
+  padding-left  : var(--c-pad);
+  padding-right : var(--c-pad);
+}
+
+/* quality-checks.html inline styles */
+.qc-hero__inner,
+.qc-content {
+  max-width     : var(--container-max);
+  padding-left  : var(--c-pad);
+  padding-right : var(--c-pad);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   3. LARGE-SCREEN ENHANCEMENTS  (>1400px — the missing piece)
+   ───────────────────────────────────────────────────────────────── */
+
+/* Hero: wider two-column gap on large screens */
+@media (min-width: 1400px) {
+  .hero__inner {
+    gap: clamp(64px, 5vw, 100px);
+  }
+}
+
+/* Section vertical rhythm — slightly more on large screens */
+@media (min-width: 1400px) {
+  .section {
+    padding-top    : clamp(80px, 6vw, 110px);
+    padding-bottom : clamp(80px, 6vw, 110px);
+  }
+}
+
+/* Footer inner gap grows on wide screens */
+@media (min-width: 1400px) {
+  .footer__inner {
+    gap: clamp(48px, 5vw, 80px);
+  }
+}
+
+/* Card grids: on wide screens auto-fit benefits from a wider minimum
+   so cards don't stretch too wide and lose readability */
+@media (min-width: 1500px) {
+  .vision-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .culture-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+/* QG namebox: allow 4 columns on very wide screens */
+@media (min-width: 1500px) {
+  .qg-namebox__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   4. TABLET / MOBILE TOKEN OVERRIDES
+      Tighten --c-pad as viewport narrows so mobile padding is
+      compact but not cramped. All existing breakpoints in style.css
+      continue to control grid columns, font sizes, etc.
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --c-pad: clamp(16px, 3.5vw, 32px);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --c-pad: 20px;
+  }
+  /* Section details / quality checks pages already have 14px
+     padding override at 640px in their inline <style> — keep that */
+}
+
+@media (max-width: 480px) {
+  :root {
+    --c-pad: 14px;
+  }
+}

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="IAST Quality Portal – Master List of Documents"/>
+  <title>IAST Quality Portal – Master List of Documents</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2300aabb'/><text x='50%' y='68%' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='16' fill='white'>I</text></svg>"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Reuse existing portal stylesheets -->
+  <link rel="stylesheet" href="/css/style.css?v=10"/>
+  <link rel="stylesheet" href="/css/responsive-flow.css?v=2"/>
+  
+  <style>
+    /* ── Page layout ── */
+    .sd-page {
+      min-height: 100vh;
+      background: var(--off-white, #f5f7fa);
+      padding-bottom: 60px;
+    }
+
+    /* ── Hero / header strip ── */
+    .sd-hero {
+      background: linear-gradient(135deg, var(--navy, #0d2b45) 0%, var(--navy-mid, #163a5f) 60%, #0f3460 100%);
+      border-bottom: 3px solid var(--teal, #00aabb);
+      padding: 40px 0 36px;
+    }
+    .sd-hero__inner {
+      margin: 0 auto;
+      padding: 0 var(--c-pad, 24px);
+    }
+
+    /* ── Back button ── */
+    .sd-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1.5px solid rgba(255,255,255,.28);
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,.82);
+      font-size: .83rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .18s, border-color .18s, color .18s;
+      margin-bottom: 24px;
+    }
+    .sd-back:hover {
+      background: rgba(0,170,187,.18);
+      border-color: var(--teal, #00aabb);
+      color: #fff;
+    }
+    .sd-back svg { width: 14px; height: 14px; }
+
+    /* ── Hero badge + title ── */
+    .sd-hero__meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .sd-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff;
+      padding: 0 10px;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+      background: var(--teal, #00aabb);
+    }
+    .sd-hero__titles { flex: 1; }
+    .sd-hero__title {
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      margin: 0 0 6px;
+    }
+    .sd-hero__group {
+      font-size: .82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.6);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main card container ── */
+    .sd-content {
+      margin: 32px auto 0;
+      padding: 0 var(--c-pad, 24px);
+      display: grid;
+      gap: 20px;
+    }
+
+    /* ── Section cards ── */
+    .sd-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .sd-card__hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #e8ecf0;
+      background: #f9fbfc;
+    }
+    .sd-card__hdr-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+    }
+    .sd-card__hdr-icon--teal  { background: #e0f7fa; color: var(--teal, #00aabb); }
+    .sd-card__hdr-icon--navy  { background: #e8edf5; color: var(--navy, #0d2b45); }
+    .sd-card__hdr-icon--green { background: #e8f5e9; color: #2e7d32; }
+    .sd-card__label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #8a9bb0;
+    }
+    .sd-card__body { padding: 20px; }
+
+    /* ── Purpose text ── */
+    .sd-purpose {
+      font-size: .96rem;
+      color: #3d4f63;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    /* ── Search & Controls ── */
+    .ml-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .ml-search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 280px;
+    }
+    .ml-search-input {
+      width: 100%;
+      padding: 11px 16px 11px 42px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #1e293b;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .ml-search-input:focus {
+      outline: none;
+      border-color: var(--teal, #00aabb);
+      box-shadow: 0 0 0 3px rgba(0, 170, 187, 0.18);
+    }
+    .ml-search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+    .ml-count-badge {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
+    /* ── Summary Table styling ── */
+    .ml-table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      background: #fff;
+      margin-bottom: 24px;
+    }
+    .ml-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+    .ml-table th {
+      background: var(--navy, #0d2b45);
+      color: #fff;
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 14px 16px;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--teal, #00aabb);
+      white-space: nowrap;
+    }
+    .ml-table td {
+      padding: 13px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: middle;
+    }
+    .ml-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .ml-table tbody tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+    .ml-table tbody tr:hover {
+      background-color: #eef2f6 !important;
+    }
+    .ml-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .ml-sno {
+      font-weight: 700;
+      color: #64748b;
+      width: 55px;
+      text-align: center;
+    }
+    .ml-group-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 0.88rem;
+    }
+    .ml-proc-id {
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--navy, #0d2b45);
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    .ml-proc-name {
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .ml-template-name {
+      font-weight: 500;
+      color: #334155;
+    }
+    .ml-version-cell {
+      text-align: center;
+      white-space: nowrap;
+    }
+    .ml-version-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      letter-spacing: 0.03em;
+      line-height: 1.3;
+    }
+    .ml-link-cell {
+      white-space: nowrap;
+      text-align: center;
+    }
+    .ml-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      background: rgba(0, 170, 187, 0.1);
+      color: var(--teal, #00aabb);
+      border: 1.5px solid rgba(0, 170, 187, 0.35);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.18s ease;
+    }
+    .ml-link-btn:hover {
+      background: var(--teal, #00aabb);
+      color: #fff;
+      border-color: var(--teal, #00aabb);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 170, 187, 0.25);
+    }
+    .ml-link-btn i {
+      font-size: 0.72rem;
+    }
+
+    /* ── Empty state ── */
+    .sd-docs-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: #9baab8;
+    }
+    .sd-docs-empty i { font-size: 2rem; margin-bottom: 10px; display: block; }
+    .sd-docs-empty p { font-size: .88rem; margin: 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .sd-hero { padding: 28px 0 24px; }
+      .sd-content { padding: 0 14px; }
+      .sd-hero__inner { padding: 0 14px; }
+      .ml-controls { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Scroll Progress Bar ── -->
+<div id="scroll-progress-bar"></div>
+
+<!-- ═══════════════════════════════════════════
+     NAVBAR
+     ═══════════════════════════════════════════ -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="navbar__inner">
+    <a href="/" class="navbar__brand">
+      <img src="/images/logo.webp" alt="IAST Software Solutions" class="navbar__logo"/>
+    </a>
+    <div class="navbar__spacer" aria-hidden="true"></div>
+    <ul class="navbar__nav" role="list">
+      <li><a href="/" class="navbar__link">Home</a></li>
+
+      <!-- Quality Dropdown -->
+      <li class="navbar__dropdown">
+        <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+          Quality <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+        </a>
+        <ul class="navbar__dropdown-menu" role="menu">
+          <li><a href="/#vision" class="navbar__dropdown-item" role="menuitem">Quality Vision</a></li>
+          <li><a href="/#culture" class="navbar__dropdown-item" role="menuitem">Quality Culture</a></li>
+          <li><a href="/#gates" class="navbar__dropdown-item" role="menuitem">Quality Gates</a></li>
+          <li><a href="/#issue-management" class="navbar__dropdown-item" role="menuitem">Issue Management</a></li>
+        </ul>
+      </li>
+
+
+      <!-- Documents Dropdown -->
+      <li class="navbar__dropdown">
+        <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+          Documents <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+        </a>
+        <ul class="navbar__dropdown-menu" role="menu">
+          <li><a href="/master-list.html" class="navbar__dropdown-item" role="menuitem">Master List</a></li>
+          <li><a href="/generic-template.html" class="navbar__dropdown-item" role="menuitem">Generic Templates</a></li>
+          <li><a href="/lessons-learned.html" class="navbar__dropdown-item" role="menuitem">Lessons Learned</a></li>
+        </ul>
+      </li>
+
+      <!-- ASPICE PRM – standalone link (no dropdown) -->
+      <li><a href="/#prm" class="navbar__link">ASPICE PRM</a></li>
+
+      <!-- Compact Search Box -->
+      <li class="navbar__search-item">
+        <form class="navbar__search-form" role="search" action="/search.html" method="GET">
+          <div class="navbar__search-box">
+            <i class="fas fa-search navbar__search-icon" aria-hidden="true"></i>
+            <input type="text" name="search" class="navbar__search-input" placeholder="Search..." aria-label="Search documents and processes"/>
+            <button type="submit" class="navbar__search-btn" aria-label="Submit search">
+              <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </form>
+      </li>
+    </ul>
+
+    <button class="navbar__toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     PAGE BODY
+     ═══════════════════════════════════════════ -->
+<main class="sd-page" id="sd-page">
+
+  <!-- Hero strip -->
+  <div class="sd-hero" id="sd-hero">
+    <div class="sd-hero__inner">
+      <a href="/#prm" class="sd-back" id="sd-back-btn">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="10 3 5 8 10 13"/>
+        </svg>
+        Back to ASPICE PRM
+      </a>
+      <div class="sd-hero__meta">
+        <div class="sd-badge" id="sd-hero-badge">ML</div>
+        <div class="sd-hero__titles">
+          <h1 class="sd-hero__title" id="sd-hero-title">Master List of Documents</h1>
+          <div class="sd-hero__group" id="sd-hero-group">Centralized quality templates & guidelines summary registry</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main cards -->
+  <div class="sd-content" id="sd-content">
+    
+    <!-- Purpose Card -->
+    <div class="sd-card">
+      <div class="sd-card__hdr">
+        <div class="sd-card__hdr-icon sd-card__hdr-icon--teal">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <div class="sd-card__label">registry purpose</div>
+      </div>
+      <div class="sd-card__body">
+        <p class="sd-purpose">
+          This Master List serves as a single, centralized quality registry of all available process templates, spreadsheets, checklists, guidelines, and policies across the ASPICE Process Reference Model (PRM). Use the summary table below to search, locate, and navigate directly to the corresponding process asset page.
+        </p>
+      </div>
+    </div>
+
+    <!-- Summary Table Registry Container (inserted dynamically) -->
+    <div id="master-registry-container">
+      <div class="sd-docs-empty" id="loading-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading master list summary table...</p>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════ -->
+<footer style="background:var(--navy);color:rgba(255,255,255,.55);text-align:center;padding:22px;font-size:.8rem;">
+  &copy; <span id="sd-year"></span> IAST Software Solutions &mdash; Quality Portal
+</footer>
+
+<!-- Scripts -->
+<script>
+  (function(){
+    // Scroll progress bar
+    var bar = document.getElementById('scroll-progress-bar');
+    if (bar) {
+      window.addEventListener('scroll', function(){
+        var s = document.documentElement;
+        var pct = (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100;
+        bar.style.width = pct + '%';
+      }, { passive: true });
+    }
+
+    // Footer year
+    var y = document.getElementById('sd-year');
+    if (y) y.textContent = new Date().getFullYear();
+
+    var container = document.getElementById('master-registry-container');
+
+    function formatTemplateName(templateName) {
+    if (!templateName) return "";
+
+    // Remove process prefixes like SYS.2, SWE.1, MAN.3, SUP.8 etc.
+    return templateName.replace(
+        /^(SYS|SWE|SUP|MAN|PIM|SPL|HWE|MLE)\.\d+\s*/i,
+        ""
+    ).trim();
+}
+
+    // Dynamic ASPICE Process Name mapping function
+    function getAspiceProcessName(processId, existingName) {
+      if (existingName && existingName !== processId && !/^(SYS|SWE|SUP|MAN|PIM|SPL|HWE|MLE)\.\d+$/i.test(existingName.trim())) {
+        return existingName;
+      }
+      var pid = (processId || '').toUpperCase().trim();
+      var names = {
+        'SYS.1': 'Requirements Elicitation',
+        'SYS.2': 'System Requirements Analysis',
+        'SYS.3': 'System Architectural Design',
+        'SYS.4': 'System Integration & Verification',
+        'SYS.5': 'System Verification',
+        'SWE.1': 'SW Requirements Analysis',
+        'SWE.2': 'SW Architectural Design',
+        'SWE.3': 'SW Detailed Design & Unit Construction',
+        'SWE.4': 'Software Unit Verification',
+        'SWE.5': 'Software Integration & Verification',
+        'SWE.6': 'Software Verification',
+        'SUP.1': 'Quality Assurance',
+        'SUP.2': 'Verification',
+        'SUP.4': 'Joint Review',
+        'SUP.7': 'Documentation',
+        'SUP.8': 'Configuration Management',
+        'SUP.9': 'Problem Resolution Management',
+        'SUP.10': 'Change Request Management',
+        'MAN.3': 'Project Management',
+        'MAN.5': 'Risk Management',
+        'MAN.6': 'Measurement',
+        'PIM.3': 'Process Improvement'
+      };
+      return names[pid] || existingName || processId;
+    }
+
+    // Dynamic Version Badge Formatter (e.g. 1.00 -> v1.0, 2.1 -> v2.1)
+    function formatVersionBadge(ver) {
+      var str = String(ver || '').trim();
+      if (!str) return 'v1.0';
+      if (str.toLowerCase().startsWith('v')) {
+        return str.toLowerCase();
+      }
+      var num = parseFloat(str);
+      if (!isNaN(num)) {
+        var formattedNum = (num % 1 === 0) ? num.toFixed(1) : String(num);
+        return 'v' + formattedNum;
+      }
+      return 'v' + str;
+    }
+
+    // Dynamic ASPICE Process Group mapping function
+    function getAspiceProcessGroup(processId) {
+      var prefix = (processId || '').split('.')[0].toUpperCase();
+      var groups = {
+        'SUP': 'Supporting Process',
+        'SYS': 'System Engineering Process',
+        'SWE': 'Software Engineering Process',
+        'MAN': 'Management Process',
+        'PIM': 'Process Improvement Process',
+        'SPL': 'Supply Process',
+        'HWE': 'Hardware Engineering Process',
+        'MLE': 'Machine Learning Engineering Process'
+      };
+      return groups[prefix] || (prefix ? prefix + ' Process' : 'ASPICE Process');
+    }
+
+    // CSV parser
+    function parseCSV(csvText) {
+      var lines = csvText.split(/\r?\n/);
+      var rows = [];
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        var cols = [];
+        var inQuotes = false;
+        var col = '';
+        for (var c = 0; c < line.length; c++) {
+          var ch = line[c];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            cols.push(col.trim());
+            col = '';
+          } else {
+            col += ch;
+          }
+        }
+        cols.push(col.trim());
+
+        if (cols.length >= 5 && /^\d+$/.test(cols[0])) {
+          var procId = cols[1];
+          var rawName = cols[2];
+          rows.push({
+            sNo: parseInt(cols[0], 10),
+            processId: procId,
+            processName: getAspiceProcessName(procId, rawName),
+            templateName: cols[3],
+            version: cols[4] || '1.00'
+          });
+        }
+      }
+      return rows;
+    }
+
+    // Match CSV row to doc.id in documents.json
+    function matchDocId(row, documentsJson) {
+      if (!documentsJson || !Array.isArray(documentsJson)) return '';
+      var matches = documentsJson.filter(function(d) {
+        return d && String(d.process).toUpperCase() === String(row.processId).toUpperCase();
+      });
+
+      if (matches.length === 0) return '';
+      if (matches.length === 1) return matches[0].id;
+
+      var rowTpl = row.templateName.toLowerCase().replace(/template|\(xlsx\)| reviewed/g, '').trim();
+      for (var j = 0; j < matches.length; j++) {
+        var docName = matches[j].documentName.toLowerCase().replace(/template|\(xlsx\)| reviewed/g, '').trim();
+        if (docName.indexOf(rowTpl) !== -1 || rowTpl.indexOf(docName) !== -1) {
+          return matches[j].id;
+        }
+      }
+      return matches[0].id;
+    }
+
+    var allTableRows = [];
+
+    function renderTable(rows) {
+      container.innerHTML = '';
+
+      if (allTableRows.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'sd-docs-empty';
+        empty.innerHTML = '<i class="fas fa-folder-open"></i><p>No documents found in Master List registry.</p>';
+        container.appendChild(empty);
+        return;
+      }
+
+      // Controls (Search + Counter)
+      var controls = document.createElement('div');
+      controls.className = 'ml-controls';
+
+      var searchWrap = document.createElement('div');
+      searchWrap.className = 'ml-search-wrap';
+      searchWrap.innerHTML = '<i class="fas fa-search ml-search-icon"></i>' +
+        '<input type="text" id="ml-search-input" placeholder="Search by Process ID, Process Name, Group, or Template..." class="ml-search-input"/>';
+
+      var countBadge = document.createElement('div');
+      countBadge.className = 'ml-count-badge';
+      countBadge.id = 'ml-count-badge';
+      countBadge.textContent = 'Showing ' + rows.length + ' of ' + allTableRows.length + ' documents';
+
+      controls.appendChild(searchWrap);
+      controls.appendChild(countBadge);
+      container.appendChild(controls);
+
+      // Table Wrapper
+      var tableWrap = document.createElement('div');
+      tableWrap.className = 'ml-table-wrap';
+
+      var table = document.createElement('table');
+      table.className = 'ml-table';
+
+      table.innerHTML = '<thead>' +
+        '<tr>' +
+          '<th style="text-align:center;width:55px;">S.No</th>' +
+          '<th>ASPICE Process Group</th>' +
+          '<th>Process ID</th>' +
+          '<th>Process Name</th>' +
+          '<th>Template / Checklist</th>' +
+          '<th style="text-align:center;">Version Number</th>' +
+          '<th style="text-align:center;">Link</th>' +
+        '</tr>' +
+      '</thead>';
+
+      var tbody = document.createElement('tbody');
+      tbody.id = 'ml-table-body';
+      table.appendChild(tbody);
+      tableWrap.appendChild(table);
+      container.appendChild(tableWrap);
+
+      renderTableRows(rows);
+
+      // Setup Search Event Listener
+      var searchInput = document.getElementById('ml-search-input');
+      if (searchInput) {
+        searchInput.value = window.currentSearchQuery || '';
+        searchInput.addEventListener('input', function(e) {
+          var query = e.target.value.toLowerCase().trim();
+          window.currentSearchQuery = query;
+          filterTable(query);
+        });
+      }
+    }
+
+    function filterTable(query) {
+      if (!query) {
+        renderTableRows(allTableRows);
+        return;
+      }
+      var filtered = allTableRows.filter(function(r) {
+        var groupName = getAspiceProcessGroup(r.processId);
+        var str = (r.sNo + ' ' + r.processId + ' ' + r.processName + ' ' + r.templateName + ' ' + r.version + ' ' + groupName).toLowerCase();
+        return str.indexOf(query) !== -1;
+      });
+      renderTableRows(filtered);
+    }
+
+    function renderTableRows(rows) {
+      var tbody = document.getElementById('ml-table-body');
+      var countBadge = document.getElementById('ml-count-badge');
+
+      if (countBadge) {
+        countBadge.textContent = 'Showing ' + rows.length + ' of ' + allTableRows.length + ' documents';
+      }
+
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      if (rows.length === 0) {
+        var emptyTr = document.createElement('tr');
+        emptyTr.innerHTML = '<td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;"><i class="fas fa-search" style="font-size:1.5rem;margin-bottom:8px;display:block;"></i>No matching documents found.</td>';
+        tbody.appendChild(emptyTr);
+        return;
+      }
+
+      rows.forEach(function(r, idx) {
+        var tr = document.createElement('tr');
+        var groupName = getAspiceProcessGroup(r.processId);
+        var targetUrl = 'section-details.html?section=' + encodeURIComponent(r.processId) +
+                        (r.docId ? '&doc=' + encodeURIComponent(r.docId) : '');
+
+        tr.innerHTML =
+          '<td class="ml-sno">' + (idx + 1) + '</td>' +
+          '<td><span class="ml-group-name">' + groupName + '</span></td>' +
+          '<td><span class="ml-proc-id">' + r.processId + '</span></td>' +
+          '<td><span class="ml-proc-name">' + r.processName + '</span></td>' +
+         '<td><span class="ml-template-name">' + formatTemplateName(r.templateName) + '</span></td>' +
+          '<td class="ml-version-cell"><span class="ml-version-badge">' + formatVersionBadge(r.version) + '</span></td>' +
+          '<td class="ml-link-cell">' +
+            '<a href="' + targetUrl + '" class="ml-link-btn" title="View ' + r.processId + ' details">' +
+              'View Process <i class="fas fa-arrow-right"></i>' +
+            '</a>' +
+          '</td>';
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Load Master List data
+    Promise.all([
+      fetch('/api/public/master-list/json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+      fetch('/api/public/documents').then(function(r) { return r.ok ? r.json() : fetch('data/documents.json').then(function(res){ return res.json(); }); }).catch(function() { return []; })
+    ]).then(function(results) {
+      var masterItemsJson = results[0];
+      var docsJson = results[1] || [];
+
+      var rows = [];
+
+      if (masterItemsJson && Array.isArray(masterItemsJson) && masterItemsJson.length > 0) {
+        rows = masterItemsJson.map(function(item, idx) {
+          return {
+            sNo: idx + 1,
+            processId: item.processId,
+            processName: getAspiceProcessName(item.processId, item.processName),
+            templateName: formatTemplateName(item.templateName),
+            version: item.version || '1.0',
+            docId: item.docId,
+            category: 'ASPICE PRM'
+          };
+        });
+      } else if (docsJson && Array.isArray(docsJson) && docsJson.length > 0) {
+        rows = docsJson.map(function(doc, idx) {
+          var rawTplName = doc.documentName || 'Document Template';
+          var cleanTplName = rawTplName.replace(/^(SYS|SWE|SUP|MAN|PIM|SPL|HWE|MLE)\.\d+\s*/i, '').trim();
+          return {
+            sNo: idx + 1,
+            processId: doc.process,
+            processName: getAspiceProcessName(doc.process, ''),
+            templateName: cleanTplName,
+            version: doc.version || '1.0',
+            docId: doc.id,
+            category: doc.category
+          };
+        });
+      }
+
+      // Filter out non-ASPICE PRM documents (such as Lessons Learned and assessment checklist resources)
+      allTableRows = rows.filter(function(row) {
+        var p = String(row.processId || row.process || '').toUpperCase().trim();
+        var cat = String(row.category || '').toLowerCase().trim();
+        if (cat === 'generic templates' || cat === 'lessons learned' || cat === 'assessment checklist' || cat === 'aspice_assessment_checklist') {
+          return false;
+        }
+        return p !== 'LL' && p !== 'GENERIC' && p.indexOf('LESSON') === -1;
+      });
+
+      // Re-index S.No cleanly
+      allTableRows.forEach(function(row, idx) {
+        row.sNo = idx + 1;
+      });
+
+      var urlParams = new URLSearchParams(window.location.search);
+      var searchParam = urlParams.get('search');
+      if (searchParam) {
+        window.currentSearchQuery = searchParam.trim();
+      }
+
+      renderTable(allTableRows);
+
+      if (window.currentSearchQuery) {
+        filterTable(window.currentSearchQuery.toLowerCase());
+      }
+    }).catch(function(err) {
+      console.error('Error loading Master List data:', err);
+      container.innerHTML = '<div class="sd-docs-empty"><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i><p>Failed to load Master List summary table. Please try again later.</p></div>';
+    });
+
+  })();
+</script>
+<script src="/js/navigation.js"></script>
+<script src="/js/script.js?v=8"></script>
+
+</body>
+</html>

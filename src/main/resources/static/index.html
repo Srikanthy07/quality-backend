@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="IAST Software Solutions – Quality Offerings Portal. ASPICE Level-2 compliant automotive engineering quality management."/>
+  <title>IAST Quality Portal – Home</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2300aabb'/><text x='50%' y='68%' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='16' fill='white'>I</text></svg>"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="/css/style.css?v=10"/>
+  <link rel="stylesheet" href="/css/responsive-flow.css?v=2"/>
+  <link rel="stylesheet" href="/css/feedback.css?v=2"/>
+
+  <!-- tsParticles Library -->
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.3.0/tsparticles.bundle.min.js"></script>
+  <link rel="icon" href="data:,">
+</head>
+<body>
+
+<!-- ── Scroll Progress Bar ── -->
+<div id="scroll-progress-bar"></div>
+
+<!-- ═══════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════ -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="navbar__inner">
+    <a href="/" class="navbar__brand">
+      <img src="/images/logo.webp" alt="IAST Software Solutions" class="navbar__logo"/>
+    </a>
+    <div class="navbar__spacer" aria-hidden="true"></div>
+    <ul class="navbar__nav" role="list">
+      <li><a href="/" class="navbar__link">Home</a></li>
+
+      <!-- Quality Dropdown -->
+      <li class="navbar__dropdown">
+        <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+          Quality <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+        </a>
+        <ul class="navbar__dropdown-menu" role="menu">
+          <li><a href="/#vision" class="navbar__dropdown-item" role="menuitem">Quality Vision</a></li>
+          <li><a href="/#culture" class="navbar__dropdown-item" role="menuitem">Quality Culture</a></li>
+          <li><a href="/#gates" class="navbar__dropdown-item" role="menuitem">Quality Gates</a></li>
+          <li><a href="/#issue-management" class="navbar__dropdown-item" role="menuitem">Issue Management</a></li>
+        </ul>
+      </li>
+
+
+      <!-- Documents Dropdown -->
+      <li class="navbar__dropdown">
+        <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+          Documents <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+        </a>
+        <ul class="navbar__dropdown-menu" role="menu">
+          <li><a href="/master-list.html" class="navbar__dropdown-item" role="menuitem">Master List</a></li>
+          <li><a href="/generic-template.html" class="navbar__dropdown-item" role="menuitem">Generic Templates</a></li>
+          <li><a href="/lessons-learned.html" class="navbar__dropdown-item" role="menuitem">Lessons Learned</a></li>
+        </ul>
+      </li>
+
+      <!-- ASPICE PRM – standalone link (no dropdown) -->
+      <li><a href="/#prm" class="navbar__link">ASPICE PRM</a></li>
+
+      <!-- Compact Search Box -->
+      <li class="navbar__search-item">
+        <form class="navbar__search-form" role="search" action="/search.html" method="GET">
+          <div class="navbar__search-box">
+            <i class="fas fa-search navbar__search-icon" aria-hidden="true"></i>
+            <input type="text" name="search" class="navbar__search-input" placeholder="Search..." aria-label="Search documents and processes"/>
+            <button type="submit" class="navbar__search-btn" aria-label="Submit search">
+              <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </form>
+      </li>
+    </ul>
+
+    <button class="navbar__toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
+<section class="hero" id="home" aria-label="Hero">
+  <div id="particles" class="hero__particles"></div>
+  <div class="hero__inner">
+    <div class="hero__copy">
+      <div class="hero__badge">
+        <span class="hero__badge-dot"></span>
+        ASPICE Level-2 Compliant &nbsp;·&nbsp; ISO 9001 &amp; ISO 27001
+      </div>
+      <p class="hero__eyebrow">Welcome to</p>
+      <h1 class="hero__title">
+        <span class="accent">Quality</span> at IAST
+      </h1>
+      <p class="hero__sub">
+        Delivering reliable, defect-free automotive engineering services through
+        structured quality gates, ASPICE assessments, and a culture of continual improvement.
+      </p>
+      <div class="hero__actions">
+        <a href="#vision" class="btn-primary">Explore Quality Vision ↓</a>
+        <a href="#prm"    class="btn-outline">ASPICE PRM →</a>
+      </div>
+      <div class="hero__stats">
+        <div class="hero__stat">
+          <strong data-count="5" data-suffix="+">5+</strong>
+          <span>Quality Gates</span>
+        </div>
+        <div class="hero__stat">
+          <strong data-count="2" data-suffix="">2</strong>
+          <span>ISO Certifications</span>
+        </div>
+        <div class="hero__stat">
+          <strong data-count="100" data-suffix="%">100%</strong>
+          <span>ASPICE L2 Aligned</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__card-stack">
+  <div class="hero__mini-card hero__mini-card--teal">
+    <div class="hero__mini-icon">
+        <i class="fa-solid fa-bullseye"></i>
+    </div>
+    <div class="hero__mini-text">
+      <strong>Quality Vision</strong>
+      <span>4 core pillars defined</span>
+      <span class="hero__mini-desc">Reliable &amp; defect-free services</span>
+    </div>
+  </div>
+
+  <div class="hero__mini-card hero__mini-card--amber">
+    <div class="hero__mini-icon">
+        <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="hero__mini-text">
+      <strong> Quality Culture</strong>
+      <span>5 governance dimensions</span>
+      <span class="hero__mini-desc">Leadership · Awareness · Governance · Metrics · Improvement</span>
+    </div>
+  </div>
+
+  <div class="hero__mini-card hero__mini-card--green">
+    <div class="hero__mini-icon">
+        <i class="fa-solid fa-diagram-project"></i>
+    </div>
+    <div class="hero__mini-text">
+      <strong>Quality Gates</strong>
+      <span>Project · System · Software</span>
+      <span class="hero__mini-desc">Multi-level QA framework</span>
+    </div>
+  </div>
+
+  <div class="hero__mini-card hero__mini-card--blue">
+    <div class="hero__mini-icon">
+        <i class="fa-solid fa-gears"></i>
+    </div>
+    <div class="hero__mini-text">
+      <strong>ASPICE PRM</strong>
+      <span>ASPICE Process Reference Model</span>
+      <span class="hero__mini-desc">v4.0 compliant processes</span>
+    </div>
+  </div>
+</div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     QUALITY VISION  –  3D Flip Cards
+═══════════════════════════════════════════ -->
+<section class="section" id="vision" aria-labelledby="vision-heading">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="overline">Our Foundation</span>
+      <h2 id="vision-heading">IAST Quality Vision</h2>
+      <p>Four guiding principles that anchor everything we do — from engineering
+         services to customer relationships and regulatory compliance.</p>
+    </div>
+
+    <div class="vision-grid">
+      <div class="vision-flip-card fade-up delay-1">
+        <div class="vision-flip-inner">
+          <div class="vision-flip-front">
+            <div class="vision-flip-num">01</div>
+            <div class="vision-flip-icon vision-flip-icon--1"></div>
+            <h3>Reliable &amp; Defect-Free Services</h3>
+            <p class="vision-flip-hint">learn more ↗</p>
+          </div>
+          <div class="vision-flip-back">
+            <div class="vision-flip-back-icon"></div>
+            <h3>Reliable &amp; Defect-Free Services</h3>
+            <p>Deliver reliable and defect-free automotive engineering services
+               by embedding quality at every stage of the engineering lifecycle.</p>
+            <ul>
+              <li>Zero-defect delivery culture</li>
+              <li>End-to-end quality embedding</li>
+              <li>ASPICE-aligned engineering</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="vision-flip-card fade-up delay-2">
+        <div class="vision-flip-inner">
+          <div class="vision-flip-front">
+            <div class="vision-flip-num">02</div>
+            <div class="vision-flip-icon vision-flip-icon--2"></div>
+            <h3>Customer Satisfaction through Process Excellence</h3>
+            <p class="vision-flip-hint">learn more ↗</p>
+          </div>
+          <div class="vision-flip-back">
+            <div class="vision-flip-back-icon"></div>
+            <h3>Customer Satisfaction</h3>
+            <p>Achieve customer satisfaction through process excellence — aligning
+               delivery quality with customer expectations at every interaction.</p>
+            <ul>
+              <li>Customer-first mindset</li>
+              <li>Process-driven delivery</li>
+              <li>Continuous feedback loops</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="vision-flip-card fade-up delay-3">
+        <div class="vision-flip-inner">
+          <div class="vision-flip-front">
+            <div class="vision-flip-num">03</div>
+            <div class="vision-flip-icon vision-flip-icon--3"></div>
+            <h3>Accountability &amp; Continual Improvement</h3>
+            <p class="vision-flip-hint">learn more ↗</p>
+          </div>
+          <div class="vision-flip-back">
+            <div class="vision-flip-back-icon"></div>
+            <h3>Accountability &amp; Improvement</h3>
+            <p>Promote accountability, ownership, and continual improvement across
+               all teams, fostering a proactive quality-first mindset.</p>
+            <ul>
+              <li>Ownership at every level</li>
+              <li>Regular CAPA cycles</li>
+              <li>KPI-driven improvement</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="vision-flip-card fade-up delay-4">
+        <div class="vision-flip-inner">
+          <div class="vision-flip-front">
+            <div class="vision-flip-num">04</div>
+            <div class="vision-flip-icon vision-flip-icon--4"></div>
+            <h3>Compliance with Requirements</h3>
+            <p class="vision-flip-hint">learn more ↗</p>
+          </div>
+          <div class="vision-flip-back">
+            <div class="vision-flip-back-icon"></div>
+            <h3>Compliance with Requirements</h3>
+            <p>Ensure compliance with customer, statutory, and regulatory
+               requirements — maintaining full traceability and auditability.</p>
+            <ul>
+              <li>ISO 9001 &amp; ISO 27001 aligned</li>
+              <li>Full audit traceability</li>
+              <li>Regulatory monitoring</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     QUALITY CULTURE
+═══════════════════════════════════════════ -->
+<section class="section section--gray" id="culture" aria-labelledby="culture-heading">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="overline">How We Work</span>
+      <h2 id="culture-heading">IAST Quality Culture</h2>
+      <p>Five interconnected dimensions that shape how quality is lived
+         and practiced across the organisation every day.</p>
+    </div>
+
+    <div class="culture-grid">
+
+      <!-- Leadership -->
+      <div class="culture-card fade-up delay-1">
+        <div class="culture-card__header">
+          <div class="culture-card__header-icon">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <h3>Leadership Commitment</h3>
+        </div>
+        <div class="culture-card__body">
+          <div class="culture-card__item">Management participation in reviews</div>
+          <div class="culture-card__item">Resource allocation for quality initiatives</div>
+          <div class="culture-card__item">Continuous monitoring of KPIs</div>
+        </div>
+      </div>
+
+      <!-- Employee -->
+      <div class="culture-card fade-up delay-2">
+        <div class="culture-card__header">
+          <div class="culture-card__header-icon">
+            <i class="fas fa-circle-info"></i>
+          </div>
+          <h3>Employee Awareness</h3>
+        </div>
+        <div class="culture-card__body">
+          <div class="culture-card__item">Regular ASPICE and quality trainings</div>
+          <div class="culture-card__item">Process awareness sessions</div>
+          <div class="culture-card__item">Lessons learned sharing</div>
+        </div>
+      </div>
+
+      <!-- Governance -->
+      <div class="culture-card fade-up delay-3">
+        <div class="culture-card__header">
+          <div class="culture-card__header-icon">
+            <i class="fas fa-display"></i>
+          </div>
+          <h3>Process Governance</h3>
+        </div>
+        <div class="culture-card__body">
+          <div class="culture-card__item">Defined SOPs and templates</div>
+          <div class="culture-card__item">Internal quality audits</div>
+          <div class="culture-card__item">Periodic compliance checks</div>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="culture-card fade-up delay-4">
+        <div class="culture-card__header">
+          <div class="culture-card__header-icon">
+            <i class="fas fa-chart-column"></i>
+          </div>
+          <h3>Metrics-Driven Monitoring</h3>
+        </div>
+        <div class="culture-card__body">
+          <div class="culture-card__item">Defect tracking</div>
+          <div class="culture-card__item">On-Time Delivery measurement</div>
+          <div class="culture-card__item">Process compliance status</div>
+        </div>
+      </div>
+
+      <!-- Improvement -->
+      <div class="culture-card fade-up delay-5">
+        <div class="culture-card__header">
+          <div class="culture-card__header-icon">
+            <i class="fas fa-arrows-rotate"></i>
+          </div>
+          <h3>Continual Improvement</h3>
+        </div>
+        <div class="culture-card__body">
+          <div class="culture-card__item">CAPA tracking</div>
+          <div class="culture-card__item">Process optimisation</div>
+          <div class="culture-card__item">Best practice implementation</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="iso-badge fade-up">
+      <div class="iso-chip">
+        <i class="fas fa-award"></i> ISO 9001 Certified
+      </div>
+      <div class="iso-chip">
+        <i class="fas fa-shield-halved"></i> ISO 27001 Certified
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     QUALITY GATES FLOW
+═══════════════════════════════════════════ -->
+
+<section class="section section--white" id="gates">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="overline">Process Flow</span>
+      <h2>IAST Quality Gates</h2>
+      <p>Multilevel QA framework ensuring SYS &amp; SW Quality across the project lifecycle. A gate is passed only when all defined criteria are met &amp; evidence is available.</p>
+    </div>
+
+    <div class="qg-root fade-up">
+
+      <!-- PROJECT -->
+      <div class="qg-tier">
+        <div class="qg-banner qg-banner--proj">IAST Project Quality Gates</div>
+        <div class="qg-body qg-body--proj">
+          <div class="qg-track-scroll"></div>
+          <div class="qg-track-zone">
+            <div class="qg-pipe qg-pipe--proj"></div>
+            <div class="qg-endcap qg-endcap--l"><div class="qg-cap-dot qg-cap-dot--proj"></div></div>
+            <div class="qg-endcap qg-endcap--r"><div class="qg-cap-dot qg-cap-dot--proj"></div></div>
+            <div class="qg-nodes">
+              <div class="qg-node" tabindex="0"><div class="qg-label">PI</div><div class="qg-gem qg-gem--lg" style="background:#dc2626"></div><div class="qg-tooltip"><div class="qg-tooltip-id">PI</div><div class="qg-tooltip-name">Project Initiation Gate</div><div class="qg-tooltip-desc">Define scope, objectives, initial risks and resource estimates. Formal project kick-off gate.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">PCP</div><div class="qg-gem qg-gem--lg" style="background:#ea7a1a"></div><div class="qg-tooltip"><div class="qg-tooltip-id">PCP</div><div class="qg-tooltip-name">Project Concept Gate</div><div class="qg-tooltip-desc">Feasibility study and high-level architecture definition. Technical and business feasibility confirmed.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">PPL</div><div class="qg-gem qg-gem--lg" style="background:#64748b"></div><div class="qg-tooltip"><div class="qg-tooltip-id">PPL</div><div class="qg-tooltip-name">Project Planning Gate</div><div class="qg-tooltip-desc">Establish PMP, QA plan, and change management plan. All plans reviewed and approved.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">PDT</div><div class="qg-gem qg-gem--lg" style="background:#2563eb"></div><div class="qg-tooltip"><div class="qg-tooltip-id">PDT</div><div class="qg-tooltip-name">Project Development Gate</div><div class="qg-tooltip-desc">Reviews, testing activities, and defect tracking. Verify completeness against project plan.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">PRL</div><div class="qg-gem qg-gem--lg" style="background:#16a34a"></div><div class="qg-tooltip"><div class="qg-tooltip-id">PRL</div><div class="qg-tooltip-name">Project Release Gate</div><div class="qg-tooltip-desc">Validation, final acceptance testing, and controlled product release to the customer.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">PCL</div><div class="qg-gem qg-gem--lg" style="background:#166534"></div><div class="qg-tooltip"><div class="qg-tooltip-id">PCL</div><div class="qg-tooltip-name">Project Closure Gate</div><div class="qg-tooltip-desc">Formal sign-off, lessons learned documentation, and project archive. Contractual closure.</div></div></div>
+            </div>
+          </div>
+          <div class="qg-phases">
+            <div class="qg-phase" style="background:#dc2626" tabindex="0">Initiation<div class="qg-tooltip"><div class="qg-tooltip-id">PI – Initiation</div><div class="qg-tooltip-desc">Scope, risks, and resources defined. Project formally kicked off.</div></div></div>
+            <div class="qg-phase" style="background:#ea7a1a" tabindex="0">Concept<div class="qg-tooltip"><div class="qg-tooltip-id">PCP – Concept</div><div class="qg-tooltip-desc">Feasibility and architecture validated. Business case confirmed.</div></div></div>
+            <div class="qg-phase" style="background:#64748b" tabindex="0">Planning<div class="qg-tooltip"><div class="qg-tooltip-id">PPL – Planning</div><div class="qg-tooltip-desc">PMP, QA plan, and change plans reviewed and approved by all stakeholders.</div></div></div>
+            <div class="qg-phase" style="background:#2563eb" tabindex="0">Development<div class="qg-tooltip"><div class="qg-tooltip-id">PDT – Development</div><div class="qg-tooltip-desc">Active development, code reviews, testing, and defect resolution phase.</div></div></div>
+            <div class="qg-phase" style="background:#16a34a" tabindex="0">Release<div class="qg-tooltip"><div class="qg-tooltip-id">PRL – Release</div><div class="qg-tooltip-desc">Validation complete. Product released to customer with acceptance sign-off.</div></div></div>
+            <div class="qg-phase" style="background:#166534" tabindex="0">Closure<div class="qg-tooltip"><div class="qg-tooltip-id">PCL – Closure</div><div class="qg-tooltip-desc">Project formally closed. Lessons learned captured. All archives complete.</div></div></div>
+          </div>
+
+          <div class="qg-checks-cta">
+            <a href="quality-checks.html?type=project" class="qg-checks-btn qg-checks-btn--proj">
+              View Project Quality Checks <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYSTEM -->
+      <div class="qg-tier">
+        <div class="qg-banner qg-banner--sys">IAST System Quality Gate</div>
+        <div class="qg-body qg-body--sys">
+          <div class="qg-track-zone">
+            <div class="qg-pipe qg-pipe--sys"></div>
+            <div class="qg-endcap qg-endcap--l"><div class="qg-cap-dot qg-cap-dot--sys"></div></div>
+            <div class="qg-endcap qg-endcap--r"><div class="qg-cap-dot qg-cap-dot--sys"></div></div>
+            <div class="qg-nodes">
+              <div class="qg-node" tabindex="0"><div class="qg-label">SYSI</div><div class="qg-gem qg-gem--md" style="background:#dc2626"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SYSI</div><div class="qg-tooltip-name">System Initiation Gate</div><div class="qg-tooltip-desc">System engineering scope defined. Initial system requirements identified and stakeholders aligned.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SYSCF</div><div class="qg-gem qg-gem--md" style="background:#ea7a1a"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SYSCF</div><div class="qg-tooltip-name">System Concept Freeze Gate</div><div class="qg-tooltip-desc">Requirements and functional analysis completed. Feasibility confirmed at system level.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SYSPL</div><div class="qg-gem qg-gem--md" style="background:#64748b"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SYSPL</div><div class="qg-tooltip-name">System Planning Gate</div><div class="qg-tooltip-desc">System planning and traceability matrix established. Integration strategy defined and approved.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SYSDT</div><div class="qg-gem qg-gem--md" style="background:#2563eb"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SYSDT</div><div class="qg-tooltip-name">System Development Gate</div><div class="qg-tooltip-desc">Architecture design and integration testing performed. System defects tracked and resolved.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SYSRL</div><div class="qg-gem qg-gem--md" style="background:#16a34a"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SYSRL</div><div class="qg-tooltip-name">System Release Gate</div><div class="qg-tooltip-desc">Validation and acceptance testing complete. System released for customer validation.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SYSCL</div><div class="qg-gem qg-gem--md" style="background:#166534"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SYSCL</div><div class="qg-tooltip-name">System Closure Gate</div><div class="qg-tooltip-desc">System engineering formally closed. All documentation archived. Lessons learned recorded.</div></div></div>
+            </div>
+          </div>
+
+          <div class="qg-checks-cta">
+            <a href="quality-checks.html?type=system" class="qg-checks-btn qg-checks-btn--sys">
+              View System Quality Checks <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOFTWARE -->
+      <div class="qg-tier">
+        <div class="qg-banner qg-banner--sw">IAST SW Quality Gate</div>
+        <div class="qg-body qg-body--sw">
+          <div class="qg-track-zone">
+            <div class="qg-pipe qg-pipe--sw"></div>
+            <div class="qg-endcap qg-endcap--l"><div class="qg-cap-dot qg-cap-dot--sw"></div></div>
+            <div class="qg-endcap qg-endcap--r"><div class="qg-cap-dot qg-cap-dot--sw"></div></div>
+            <div class="qg-nodes">
+              <div class="qg-node" tabindex="0"><div class="qg-label">SWI</div><div class="qg-gem qg-gem--sm" style="background:#dc2626"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SWI</div><div class="qg-tooltip-name">Software Initiation Gate</div><div class="qg-tooltip-desc">Software engineering scope and objectives defined. SW team resources allocated.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SWCP</div><div class="qg-gem qg-gem--sm" style="background:#ea7a1a"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SWCP</div><div class="qg-tooltip-name">Software Concept Phase Gate</div><div class="qg-tooltip-desc">SW requirements and feasibility analysis completed. High-level SW architecture outlined.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SWPL</div><div class="qg-gem qg-gem--sm" style="background:#64748b"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SWPL</div><div class="qg-tooltip-name">Software Planning Gate</div><div class="qg-tooltip-desc">Development and test planning complete. SW architecture and unit test plans approved.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SWDT</div><div class="qg-gem qg-gem--sm" style="background:#2563eb"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SWDT</div><div class="qg-tooltip-name">Software Development Gate</div><div class="qg-tooltip-desc">Code reviews, unit testing, and static analysis performed. All SW defects tracked.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SWRL</div><div class="qg-gem qg-gem--sm" style="background:#16a34a"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SWRL</div><div class="qg-tooltip-name">Software Release Gate</div><div class="qg-tooltip-desc">Qualification and regression testing complete. SW released with sign-off documentation.</div></div></div>
+              <div class="qg-node" tabindex="0"><div class="qg-label">SWCL</div><div class="qg-gem qg-gem--sm" style="background:#166534"></div><div class="qg-tooltip"><div class="qg-tooltip-id">SWCL</div><div class="qg-tooltip-name">Software Closure Gate</div><div class="qg-tooltip-desc">Software formally closed. Final SW documentation archived. Lessons learned captured.</div></div></div>
+            </div>
+          </div>
+
+          <div class="qg-checks-cta">
+            <a href="quality-checks.html?type=software" class="qg-checks-btn qg-checks-btn--sw">
+              View Software Quality Checks <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.qg-root -->
+    <!--
+      Detailed quality-check grids (name boxes) for each gate type now
+      live on quality-checks.html and are rendered based on the ?type=
+      URL parameter set by the "View Quality Checks" buttons above.
+      See js/quality-checks.js.
+    -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     ISSUE MANAGEMENT 
+═══════════════════════════════════════════ -->
+<section class="section section--white" id="issue-management" aria-labelledby="issue-heading">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="overline">SUP.9 · Problem Resolution</span>
+      <h2 id="issue-heading">Issue Management</h2>
+      <p>A structured, end-to-end approach to detecting, resolving, and preventing recurrence of issues across all project phases.</p>
+    </div>
+
+    <!-- ── Resolution Process ── -->
+    <div class="im-block fade-up">
+      <div class="im-block__label">Issue Resolution Process</div>
+
+      <div class="im-process-wrapper">
+        
+        
+        <!-- ── TOP ROW: Left to Right ── -->
+        <div class="im-process-flow im-process-flow--top">
+          
+          <div class="im-step im-step--detect">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Issue Detection</div>
+            <div class="im-step__desc">Issue identified by team, tools, review, testing or customer</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          
+          <div class="im-step im-step--log">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Issue Logging</div>
+            <div class="im-step__desc">Log issue in tracking tool with complete details</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          
+          <div class="im-step im-step--severity">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Severity &amp; Priority</div>
+            <div class="im-step__desc">Assess severity, priority and classify</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          
+          <div class="im-step im-step--impact">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Impact Analysis</div>
+            <div class="im-step__desc">Analyze impact on scope, schedule, quality, cost &amp; customer</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          
+          <!-- ── CONTAINMENT ── -->
+          <div class="im-step im-step--contain">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Containment</div>
+            <div class="im-step__desc">Take immediate action to minimize the impact</div>
+          </div>
+          
+        </div>
+
+       <div class="im-down-connector" aria-hidden="true">
+   <i class="fa-solid fa-arrow-down"></i>
+</div>
+
+        <!-- ── BOTTOM ROW: Left to Right (REVERSED) ── -->
+        <div class="im-process-flow im-process-flow--bottom">
+          
+          <div class="im-step im-step--rca">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Root Cause Analysis</div>
+            <div class="im-step__desc">Identify root cause (5 Why, Fishbone etc.)</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-left"></i>
+</div>
+          
+          <div class="im-step im-step--capa">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Corrective Action Planning</div>
+            <div class="im-step__desc">Define corrective actions, owner and due date</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-left"></i>
+</div>
+          
+          <div class="im-step im-step--implement">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Implementation</div>
+            <div class="im-step__desc">Implement corrective actions as per plan</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-left"></i>
+</div>
+          
+          <div class="im-step im-step--verify">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Verification &amp; Validation</div>
+            <div class="im-step__desc">Verify effectiveness and ensure issue is resolved</div>
+          </div>
+          
+          <div class="im-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-left"></i>
+</div>
+          
+          <div class="im-step im-step--closure">
+            <div class="im-step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="im-step__label">Closure &amp; Lessons Learned</div>
+            <div class="im-step__desc">Close issue after approval and capture lessons learned</div>
+          </div>
+          
+        </div>
+
+      </div>
+
+      <div class="im-evidence-tag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <strong>Evidence &amp; Records:</strong> Issue Log · RCA Report · Corrective Action Plan · Verification Records · Closure Approval · Lessons Learned Register
+      </div>
+    </div>
+
+    <!-- ── Two columns: Escalation + Severity ── -->
+    <div class="im-two-col fade-up">
+
+      <!-- Escalation Card -->
+      <div class="im-card">
+        <div class="im-card__title">Escalation Path</div>
+        <div class="im-escalation-path">
+          <div class="im-esc-node im-esc-node--1">
+            <div class="im-esc-icon"><i class="fas fa-user"></i></div>
+            <div class="im-esc-label">Team Member<br/><span>Issue Raised</span></div>
+          </div>
+          <div class="im-esc-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          <div class="im-esc-node im-esc-node--2">
+            <div class="im-esc-icon"><i class="fas fa-users"></i></div>
+            <div class="im-esc-label">Team Lead</div>
+          </div>
+          <div class="im-esc-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          <div class="im-esc-node im-esc-node--3">
+            <div class="im-esc-icon"><i class="fas fa-tasks"></i></div>
+            <div class="im-esc-label">Project Manager</div>
+          </div>
+          <div class="im-esc-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          <div class="im-esc-node im-esc-node--4">
+            <div class="im-esc-icon"><i class="fas fa-chart-bar"></i></div>
+            <div class="im-esc-label">Delivery Manager</div>
+          </div>
+          <div class="im-esc-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          <div class="im-esc-node im-esc-node--5">
+            <div class="im-esc-icon"><i class="fas fa-building"></i></div>
+            <div class="im-esc-label">Senior Management</div>
+          </div>
+          <div class="im-esc-arrow" aria-hidden="true">
+   <i class="fa-solid fa-arrow-right"></i>
+</div>
+          <div class="im-esc-node im-esc-node--6">
+            <div class="im-esc-icon"><i class="fas fa-handshake"></i></div>
+            <div class="im-esc-label">Customer<br/><span>if required</span></div>
+          </div>
+        </div>
+
+        <div class="im-trigger-grid">
+          <div class="im-trigger-col">
+            <div class="im-trigger-heading">Escalation Triggers</div>
+            <div class="im-trigger-row"><span class="im-trigger-lvl im-trigger-lvl--1">L1</span> Not resolved within commitment at team level</div>
+            <div class="im-trigger-row"><span class="im-trigger-lvl im-trigger-lvl--2">L2</span> Schedule / quality impact or repeated issues</div>
+            <div class="im-trigger-row"><span class="im-trigger-lvl im-trigger-lvl--3">L3</span> Delivery risk, compliance or major customer impact</div>
+            <div class="im-trigger-row"><span class="im-trigger-lvl im-trigger-lvl--4">L4</span> Critical commitment, safety or business impact</div>
+          </div>
+          <div class="im-trigger-col">
+            <div class="im-trigger-heading">Escalation Principles</div>
+            <div class="im-principle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg> 
+              Escalate early, not late
+            </div>
+            <div class="im-principle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg> 
+              Provide clear facts and impact
+            </div>
+            <div class="im-principle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg> 
+              Drive resolution, not ownership transfer
+            </div>
+            <div class="im-principle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg> 
+              Communicate transparently
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Severity & Commitments Card -->
+      <div class="im-card">
+        <div class="im-card__title">Response &amp; Resolution Commitments</div>
+        <div class="im-severity-table">
+          <div class="im-sev-header">
+            <div>Severity</div>
+            <div>Initial Response</div>
+            <div>Containment</div>
+            <div>Resolution</div>
+          </div>
+          <div class="im-sev-row">
+            <div class="im-sev-badge im-sev-badge--critical">Critical</div>
+            <div>≤ 4 Hours</div>
+            <div>≤ 8 Hours</div>
+            <div>≤ 24 Hours</div>
+          </div>
+          <div class="im-sev-row">
+            <div class="im-sev-badge im-sev-badge--high">High</div>
+            <div>1 Business Day</div>
+            <div>2 Days</div>
+            <div>5 Days</div>
+          </div>
+          <div class="im-sev-row">
+            <div class="im-sev-badge im-sev-badge--medium">Medium</div>
+            <div>2 Business Days</div>
+            <div>3 Days</div>
+            <div>10 Days</div>
+          </div>
+          <div class="im-sev-row">
+            <div class="im-sev-badge im-sev-badge--low">Low</div>
+            <div>3 Business Days</div>
+            <div>Next Sprint</div>
+            <div>Planned Release</div>
+          </div>
+        </div>
+
+        <div class="im-metrics-row">
+          <div class="im-metric">
+            <div class="im-metric__val">≤ 4 hrs</div>
+            <div class="im-metric__label">Critical Response</div>
+          </div>
+          <div class="im-metric">
+            <div class="im-metric__val">1 Day</div>
+            <div class="im-metric__label">High Severity</div>
+          </div>
+          <div class="im-metric">
+            <div class="im-metric__val">&gt; 90%</div>
+            <div class="im-metric__label">CAPA Closed on Time</div>
+          </div>
+          <div class="im-metric">
+            <div class="im-metric__val">&lt; 5%</div>
+            <div class="im-metric__label">Reopened Issues</div>
+          </div>
+          <div class="im-metric">
+            <div class="im-metric__val">&gt; 95%</div>
+            <div class="im-metric__label">Escalations Closed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Goal Banner ── -->
+    <div class="im-goal-banner fade-up">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+      <span><strong>Goal:</strong> Resolve issues effectively, prevent recurrence &amp; drive continuous improvement in products and processes</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FLOW OF ISSUE RESOLUTION
+═══════════════════════════════════════════ -->
+<section class="section section--gray" id="issue-resolution" aria-labelledby="resolution-heading">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="overline">5-Phase Lifecycle</span>
+      <h2 id="resolution-heading">Flow of Issue Resolution</h2>
+      <p>Every issue follows a traceable, owner-assigned path from detection through closure — embedding lessons learned back into the process.</p>
+    </div>
+ 
+    <div class="fir-layout fade-up">
+ 
+      <!-- Left: 5 phases -->
+      <div class="fir-phases">
+ 
+        <div class="fir-phase">
+          <div class="fir-phase__num">01</div>
+          <div class="fir-phase__body">
+            <div class="fir-phase__title">Problem Resolution</div>
+            <p>All identified issues, defects, and non-conformities are uniquely recorded and tracked to ensure complete traceability throughout the lifecycle.</p>
+          </div>
+        </div>
+ 
+        <div class="fir-phase">
+          <div class="fir-phase__num">02</div>
+          <div class="fir-phase__body">
+            <div class="fir-phase__title">Analyze Problem</div>
+            <p>Each issue undergoes impact assessment and root cause analysis to evaluate its effect on product quality, project schedule, cost, safety, and customer commitments.</p>
+          </div>
+        </div>
+ 
+        <div class="fir-phase">
+          <div class="fir-phase__num">03</div>
+          <div class="fir-phase__body">
+            <div class="fir-phase__title">Problem Resolution</div>
+            <p>Corrective and preventive actions are planned, implemented, and verified to ensure effective resolution and to prevent recurrence of similar issues.</p>
+          </div>
+        </div>
+ 
+        <div class="fir-phase">
+          <div class="fir-phase__num">04</div>
+          <div class="fir-phase__body">
+            <div class="fir-phase__title">Monitoring</div>
+            <p>Issue status, aging, resolution trends, and escalation metrics are continuously monitored through regular project and quality reviews.</p>
+          </div>
+        </div>
+ 
+        <div class="fir-phase">
+          <div class="fir-phase__num">05</div>
+          <div class="fir-phase__body">
+            <div class="fir-phase__title">Problem Closing</div>
+            <p>Lessons learned from resolved issues are incorporated into project processes, work products, checklists, and best practices to drive continuous improvement.</p>
+          </div>
+        </div>
+ 
+      </div>
+ 
+      <!-- Right: Steps × Owner table -->
+      <div class="fir-table-wrap">
+        <div class="fir-table-title">Steps &amp; Ownership</div>
+        <div class="fir-table">
+          <div class="fir-row fir-row--header">
+            <div>Step</div>
+            <div>Owner</div>
+          </div>
+          <div class="fir-row fir-row--phase-1">
+            <div>Issue Detection</div>
+            <div>Developer / Tester / Customer</div>
+          </div>
+          <div class="fir-row fir-row--phase-1">
+            <div>Issue Logging</div>
+            <div>Project Team</div>
+          </div>
+          <div class="fir-row fir-row--phase-2">
+            <div>Severity Assessment</div>
+            <div>Project Manager / Quality Team</div>
+          </div>
+          <div class="fir-row fir-row--phase-2">
+            <div>Impact Analysis</div>
+            <div>Project Manager</div>
+          </div>
+          <div class="fir-row fir-row--phase-2">
+            <div>Containment Action</div>
+            <div>Technical Lead</div>
+          </div>
+          <div class="fir-row fir-row--phase-2">
+            <div>RCA</div>
+            <div>Technical Team + Quality Team</div>
+          </div>
+          <div class="fir-row fir-row--phase-3">
+            <div>Corrective Action</div>
+            <div>Responsible Owner</div>
+          </div>
+          <div class="fir-row fir-row--phase-3">
+            <div>Verification &amp; Validation</div>
+            <div>QA / Tester</div>
+          </div>
+          <div class="fir-row fir-row--phase-3">
+            <div>Effectiveness Check</div>
+            <div>Quality Team</div>
+          </div>
+          <div class="fir-row fir-row--phase-5">
+            <div>Approval &amp; Closure</div>
+            <div>Project Manager / Quality Manager</div>
+          </div>
+          <div class="fir-row fir-row--phase-5">
+            <div>Lessons Learned</div>
+            <div>Project Manager / Team Lead</div>
+          </div>
+        </div>
+      </div>
+ 
+    </div><!-- /.fir-layout -->
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     ASPICE PRM
+═══════════════════════════════════════════ -->
+<section class="section section--navy" id="prm">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="overline" style="color:var(--teal-light)">ASPICE PRM v4.0</span>
+      <h2 style="color:#fff">ASPICE Process Reference Model</h2>
+       </div>
+
+    <div class="prm-interactive fade-up" id="prm-root">
+      <div class="prm-ig" id="prm-grid">
+
+        <div class="pig pig--sup" style="grid-row:1/3">
+          <div class="pig-title pig-title--sup">Supporting Process Group (SUP)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--sup" onclick="window.location='section-details.html?section=SUP.1'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SUP.1';}"><b>SUP.1</b>Quality Assurance</div>
+            <div class="pcell pcell--sup" onclick="window.location='section-details.html?section=SUP.8'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SUP.8';}"><b>SUP.8</b>Configuration Management</div>
+            <div class="pcell pcell--sup" onclick="window.location='section-details.html?section=SUP.9'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SUP.9';}"><b>SUP.9</b>Problem Resolution Management</div>
+            <div class="pcell pcell--sup" onclick="window.location='section-details.html?section=SUP.10'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SUP.10';}"><b>SUP.10</b>Change Request Management</div>
+            <div class="pcell pcell--sup" onclick="window.location='section-details.html?section=SUP.11'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SUP.11';}"><b>SUP.11</b>ML Data Management</div>
+          </div>
+        </div>
+
+        <div class="pig pig--sys" style="grid-column:2;grid-row:1">
+          <div class="pig-title pig-title--sys">System Engineering Process Group (SYS)</div>
+          <div class="pig-cells pig-cells--grid2">
+            <div class="pcell pcell--sys" onclick="window.location='section-details.html?section=SYS.1'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SYS.1';}"><b>SYS.1</b>Requirements Elicitation</div>
+            <div></div>
+            <div class="pcell pcell--sys" onclick="window.location='section-details.html?section=SYS.2'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SYS.2';}"><b>SYS.2</b>System Requirements Analysis</div>
+            <div class="pcell pcell--sys" onclick="window.location='section-details.html?section=SYS.5'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SYS.5';}"><b>SYS.5</b>System Verification</div>
+            <div class="pcell pcell--sys" onclick="window.location='section-details.html?section=SYS.3'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SYS.3';}"><b>SYS.3</b>System Architectural Design</div>
+            <div class="pcell pcell--sys" onclick="window.location='section-details.html?section=SYS.4'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SYS.4';}"><b>SYS.4</b>System Integration &amp; Verification</div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="pig pig--org" style="grid-column:3;grid-row:1">
+          <div class="pig-title pig-title--org">Validation Process Group (VAL)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--org" onclick="window.location='section-details.html?section=VAL.1'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=VAL.1';}"><b>VAL.1</b>Validation</div>
+          </div>
+        </div>
+
+        <div class="pig pig--org" style="grid-column:4;grid-row:1/3">
+          <div class="pig-title pig-title--org">Management Process Group (MAN)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--org" onclick="window.location='section-details.html?section=MAN.3'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MAN.3';}"><b>MAN.3</b>Project Management</div>
+            <div class="pcell pcell--org" onclick="window.location='section-details.html?section=MAN.5'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MAN.5';}"><b>MAN.5</b>Risk Management</div>
+            <div class="pcell pcell--org" onclick="window.location='section-details.html?section=MAN.6'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MAN.6';}"><b>MAN.6</b>Measurement</div>
+          </div>
+          <div class="pig-mini-title">Process Improvement (PIM)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--org" onclick="window.location='section-details.html?section=PIM.3'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=PIM.3';}"><b>PIM.3</b>Process Improvement</div>
+          </div>
+          <div class="pig-mini-title">Reuse Process Group (REU)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--org" onclick="window.location='section-details.html?section=REU.2'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=REU.2';}"><b>REU.2</b>Management of Products for Reuse</div>
+          </div>
+        </div>
+
+        <div class="pig pig--pri" style="grid-column:2;grid-row:2">
+          <div class="pig-title pig-title--pri">Software Engineering Process Group (SWE)</div>
+          <div class="pig-cells pig-cells--grid2">
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=SWE.1'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SWE.1';}"><b>SWE.1</b>SW Requirements Analysis</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=SWE.6'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SWE.6';}"><b>SWE.6</b>Software Verification</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=SWE.2'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SWE.2';}"><b>SWE.2</b>SW Architectural Design</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=SWE.5'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SWE.5';}"><b>SWE.5</b>SW Component Verification</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=SWE.3'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SWE.3';}"><b>SWE.3</b>SW Detailed Design &amp; Unit</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=SWE.4'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=SWE.4';}"><b>SWE.4</b>SW Unit Verification</div>
+          </div>
+        </div>
+
+        <div class="pig pig--pri pig--disabled" style="grid-column:3;grid-row:2" aria-disabled="true">
+          <div class="pig-title pig-title--hwe">Hardware Engineering (HWE)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--hwe pcell--disabled"><b>HWE.1</b>HW Requirements Analysis</div>
+            <div class="pcell pcell--hwe pcell--disabled"><b>HWE.4</b>Verification against HW Requirements</div>
+            <div class="pcell pcell--hwe pcell--disabled"><b>HWE.2</b>HW Design</div>
+            <div class="pcell pcell--hwe pcell--disabled"><b>HWE.3</b>Verification against HW Design</div>
+          </div>
+        </div>
+
+        <div class="pig pig--pri" style="grid-column:2;grid-row:3">
+          <div class="pig-title pig-title--pri">Machine Learning Engineering Process Group (MLE)</div>
+          <div class="pig-cells pig-cells--grid4">
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=MLE.1'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MLE.1';}"><b>MLE.1</b>ML Requirements Analysis</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=MLE.2'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MLE.2';}"><b>MLE.2</b>ML Architecture</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=MLE.3'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MLE.3';}"><b>MLE.3</b>ML Training</div>
+            <div class="pcell pcell--pri" onclick="window.location='section-details.html?section=MLE.4'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location='section-details.html?section=MLE.4';}"><b>MLE.4</b>ML Model Testing</div>
+          </div>
+        </div>
+
+        <div class="pig pig--org pig--disabled" style="grid-column:3;grid-row:3" aria-disabled="true">
+          <div class="pig-title pig-title--org">Acquisition Process Group (ACQ)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--org pcell--disabled"><b>ACQ.4</b>Supplier Monitoring</div>
+          </div>
+        </div>
+
+        <div class="pig pig--org pig--disabled" style="grid-column:4;grid-row:3" aria-disabled="true">
+          <div class="pig-title pig-title--org">Supply Process Group (SPL)</div>
+          <div class="pig-cells">
+            <div class="pcell pcell--org pcell--disabled"><b>SPL.2</b>Product Release</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="prm-legend">
+        <div class="prm-leg-item"><span class="prm-leg-dot prm-leg-dot--pri"></span>Primary Lifecycle Processes</div>
+        <div class="prm-leg-item"><span class="prm-leg-dot prm-leg-dot--org"></span>Organizational Lifecycle Processes</div>
+        <div class="prm-leg-item"><span class="prm-leg-dot prm-leg-dot--sup"></span>Supporting Lifecycle Processes</div>
+      </div>
+
+      <div class="prm-overlay" id="prm-overlay">
+        <div class="prm-modal" role="dialog" aria-modal="true" aria-labelledby="prm-modal-title">
+          <div class="prm-modal-hdr">
+            <div class="prm-modal-hdr-left">
+              <div class="prm-modal-badge" id="prm-badge">ID</div>
+              <div>
+                <div class="prm-modal-title" id="prm-modal-title">Process Title</div>
+                <div class="prm-modal-group" id="prm-modal-group">Process Group</div>
+              </div>
+            </div>
+            <button class="prm-close-btn" onclick="closePRM()" aria-label="Close modal">&times;</button>
+          </div>
+          <div class="prm-modal-body">
+            <div class="prm-modal-section">
+              <div class="prm-modal-section-label">Purpose</div>
+              <p class="prm-modal-purpose" id="prm-purpose"></p>
+            </div>
+            <div class="prm-modal-section">
+              <div class="prm-modal-section-label">Key Outcomes</div>
+              <ul class="prm-outcomes" id="prm-outcomes"></ul>
+            </div>
+            <div class="prm-modal-divider"></div>
+            <div class="prm-modal-section">
+              <div class="prm-modal-section-label">Process Documents</div>
+              <div class="prm-dl-row" id="prm-dl-row"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="feedback-page">
+    <div class="feedback-card">
+
+        <div class="feedback-header">
+            
+            <h1>We'd Love Your Feedback</h1>
+            <p>Help us improve the Quality Website by sharing your thoughts, suggestions, or concerns.</p>
+        </div>
+
+        <!-- ── Alert banners (hidden by default, toggled via JS) ── -->
+        <div id="successAlert" class="alert alert--success" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            <span id="successMessage">Thank you! Your feedback has been submitted successfully.</span>
+        </div>
+
+        <div id="errorAlert" class="alert alert--error" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span id="errorMessage">Something went wrong. Please try again.</span>
+        </div>
+
+        <!-- ── Feedback Form ── -->
+        <form id="feedbackForm" novalidate>
+
+            <div class="form-group">
+                <label for="name">Name <span class="required">*</span></label>
+                <input type="text" id="name" name="name" placeholder="Enter your full name" maxlength="100" required/>
+                <span class="field-error" id="nameError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" maxlength="150" required/>
+                <span class="field-error" id="emailError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Message <span class="required">*</span></label>
+                <textarea id="message" name="message" rows="6" placeholder="Write your feedback here (minimum 10 characters)..." maxlength="2000" required></textarea>
+                <div class="char-count"><span id="charCount">0</span> / 2000</div>
+                <span class="field-error" id="messageError"></span>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+                <span class="btn-text">Submit Feedback</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+<script src="/js/feedback.js?v=1"></script>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <div class="footer__logo">
+          <img src="/images/logo.webp" alt="IAST Software Solutions" class="footer__logo-img"/>
+        </div>
+        <p class="footer__desc">
+          Automotive engineering quality management powered by ASPICE,
+          ISO 9001, and ISO 27001 best practices.
+        </p>
+        <div class="footer__iso">
+          <span class="footer__iso-tag">ISO 9001</span>
+          <span class="footer__iso-tag">ISO 27001</span>
+          <span class="footer__iso-tag">ASPICE L2</span>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h4>Quality Framework</h4>
+        <ul>
+          <li><a href="#vision">Quality Vision</a></li>
+          <li><a href="#culture">Quality Culture</a></li>
+          <li><a href="#gates">Quality Gates</a></li>
+          <li><a href="#issue-management">Issue Management</a></li>
+          
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>ASPICE Model</h4>
+        <ul>
+          <li><a href="#prm">ASPICE PRM v4.0</a></li>
+          <li><a href="#gates">Quality Gates</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__copy">&copy; 2026 IAST Software Solutions. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/navigation.js"></script>
+<script src="/js/script.js?v=8"></script>
+  <script src="/js/flow-scale.js"></script>
+</body>
+</html>

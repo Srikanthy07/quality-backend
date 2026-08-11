@@ -1,0 +1,34 @@
+S.No,Process ID,Process Name,Template / Checklist,Version Number
+1,SUP.1,Quality Assurance,Quality Management Plan Template,1.00
+2,SUP.1,Quality Assurance,Quality Audit Plan Template,1.00
+3,SUP.1,Quality Assurance,Quality Assurance Strategy Template,1.00
+4,SUP.1,Quality Assurance,Quality Audit Report Template,1.00
+5,SUP.1,Quality Assurance,NC Log & Resolution Template,1.00
+6,SUP.8,Configuration Management,Configuration Management Plan Template,1.00
+7,SUP.8,Configuration Management,CM Audit Checklist Template,1.00
+8,SUP.8,Configuration Management,Baseline Report Template,1.00
+9,SUP.9,Problem Resolution Management,Problem Resolution Management Plan Template,1.00
+10,SUP.9,Problem Resolution Management,Problem Report & Resolution Log Template,1.00
+11,SUP.10,Change Request Management,Change Request Management Plan Template,1.00
+12,SUP.10,Change Request Management,Change Request Log Template,1.00
+13,SYS.2,System Requirements Analysis,Requirement Management Plan Template,1.00
+14,SYS.2,System Requirements Analysis,System Requirements Analysis Report Template,1.00
+15,SYS.3,System Architectural Design,System Architecture Review Checklist Template,1.00
+16,SYS.4,System Integration & Verification,System Integration Verification Measure Template,1.00
+17,SYS.5,System Verification,System Verification Measure Template,1.00
+18,SWE.1,SW Requirements Analysis,SW Requirements Management Plan Template,1.00
+19,SWE.1,SW Requirements Analysis,SW Requirements Analysis Report Template,1.00
+20,SWE.2,SW Architectural Design,Software Architecture Design Template,1.00
+21,SWE.2,SW Architectural Design,Software Architecture Guideline Template,1.00
+22,SWE.3,SW Detailed Design & Unit Construction,SW Detailed Design & Unit Construction Guideline Template,1.00
+23,SWE.4,Software Unit Verification,Software Unit Verification Measure Template,1.00
+24,SWE.5,Software Integration & Verification,SW Component Integration Verification Measure Template,1.00
+25,SWE.6,Software Verification,Software Verification Measure Template,1.00
+26,MAN.3,Project Management,Project Management Plan Template,1.00
+27,MAN.3,Project Management,Project Schedule & Milestone Tracker Template,1.00
+28,MAN.3,Project Management,Work Breakdown Structure (WBS) Template,1.00
+29,MAN.5,Risk Management,Risk Register Template,1.00
+30,MAN.5,Risk Management,Risk Management Plan Template,1.00
+31,MAN.5,Risk Management,Corrective Action Report (CAR) Template,1.00
+32,MAN.6,Measurement,Measurement & CSAT Feedback Template,1.00
+33,PIM.3,Process Improvement,Continual Process Improvement Policy Template,1.00

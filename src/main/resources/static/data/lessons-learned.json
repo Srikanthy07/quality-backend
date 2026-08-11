@@ -1,0 +1,47 @@
+[
+  {
+    "id": "LL-001",
+    "process": "LL",
+    "documentName": "Autonomous Drive EV Bus Lessons Learned",
+    "version": "1.0",
+    "description": "Comprehensive lessons learned document detailing system engineering, thermal management, vehicle control unit (VCU) integration, and safety hazard mitigations during Autonomous Drive EV Bus development.",
+    "filePath": "documents/lessons-learned/BR01_Lessons_Learned.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "LL-002",
+    "process": "LL",
+    "documentName": "Autonomous Bot Last Mile Delivery Bootloader ISSUES Lessons Learned",
+    "version": "1.0",
+    "description": "Lessons learned document covering bootloader-related issues, firmware update challenges, root cause analysis, corrective actions, and best practices identified during the Autonomous Bot Last Mile Delivery project.",
+    "filePath": "documents/lessons-learned/Bootloader_ISSUES_Leassons_Learned.xlsx.url",
+    "type": "URL"
+  },
+  {
+    "id": "LL-003",
+    "process": "LL",
+    "documentName": "Autonomous Bot Last Mile Delivery Cybersecurity ISSUES Lessons Learned",
+    "version": "1.0",
+    "description": "Lessons learned document covering cybersecurity issues, vulnerability analysis, mitigation strategies, corrective actions, and recommendations from the Autonomous Bot Last Mile Delivery project.",
+    "filePath": "documents/lessons-learned/Cybersecurity_ISSUES_Lessons_Learned.xlsx.url",
+    "type": "URL"
+  },
+  {
+    "id": "LL-004",
+    "process": "LL",
+    "documentName": "Autonomous Bot Last Mile Delivery Integration Lessons Learned",
+    "version": "1.0",
+    "description": "Lessons learned document documenting integration challenges, testing issues, validation activities, resolutions, and key takeaways from the Autonomous Bot Last Mile Delivery project.",
+    "filePath": "documents/lessons-learned/Lesson_Learned_integration.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "LL-005",
+    "process": "LL",
+    "documentName": "Autonomous Bot Last Mile Delivery SWE.1 Lessons Learned",
+    "version": "1.0",
+    "description": "Lessons learned document for the ASPICE SWE.1 process, covering software requirements engineering challenges, improvements, review findings, and best practices from the Autonomous Bot Last Mile Delivery project.",
+    "filePath": "documents/lessons-learned/SWE.1 Lessons Learnt.xlsx",
+    "type": "XLSX"
+  }
+]

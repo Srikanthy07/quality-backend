@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="IAST Quality Portal – Quality Gate Checks"/>
+  <title id="page-title">IAST Quality Gates | Quality Portal</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2300aabb'/><text x='50%' y='68%' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='16' fill='white'>I</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css?v=10"/>
+  <link rel="stylesheet" href="/css/responsive-flow.css?v=2"/>
+    
+  <style>
+    /* ── Page shell ── */
+    .qc-page { min-height: 100vh; background: var(--off-white, #f5f7fa); padding-bottom: 60px; }
+
+    /* ── Hero strip ── */
+    .qc-hero {
+      background: linear-gradient(135deg, var(--navy,#0d2b45) 0%, var(--navy-mid,#163a5f) 60%, #0f3460 100%);
+      border-bottom: 3px solid var(--teal,#00aabb);
+      padding: 40px 0 36px;
+    }
+    .qc-hero__inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--c-pad, 24px); }
+
+    /* ── Back button ── */
+    .qc-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 18px; border-radius: 6px;
+      border: 1.5px solid rgba(255,255,255,.28);
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,.82); font-size: .83rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: background .18s, border-color .18s, color .18s;
+      margin-bottom: 24px;
+    }
+    .qc-back:hover { background: rgba(0,170,187,.18); border-color: var(--teal,#00aabb); color: #fff; }
+    .qc-back svg { width: 14px; height: 14px; }
+
+    /* ── Tab switcher ── */
+    .qc-tabs {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px;
+    }
+    .qc-tab {
+      padding: 9px 22px; border-radius: 7px; border: 1.5px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.08); color: rgba(255,255,255,.7);
+      font-size: .85rem; font-weight: 700; cursor: pointer; letter-spacing: .03em;
+      text-decoration: none; transition: background .18s, border-color .18s, color .18s;
+    }
+    .qc-tab:hover { background: rgba(255,255,255,.14); color: #fff; }
+    .qc-tab.active-proj,
+    .qc-tab.active-sys,
+    .qc-tab.active-sw {
+      background: var(--teal,#00aabb); border-color: var(--teal,#00aabb); color: #fff;
+    }
+
+    /* ── Hero title area ── */
+    .qc-hero__title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .qc-hero__badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 6px 14px; border-radius: 7px;
+      font-family: var(--font-head,'Barlow Condensed',sans-serif);
+      font-size: .8rem; font-weight: 800; color: #fff; letter-spacing: .06em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.28);
+    }
+    .qc-hero__badge--proj,
+    .qc-hero__badge--sys,
+    .qc-hero__badge--sw {
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.28);
+    }
+    .qc-hero__h1 {
+      font-family: var(--font-head,'Barlow Condensed',sans-serif);
+      font-size: clamp(1.5rem,3vw,2.1rem); font-weight: 800; color: #fff; margin: 0;
+    }
+    .qc-hero__sub { margin-top: 8px; font-size: .88rem; color: rgba(255,255,255,.6); }
+
+    /* ── Content wrapper ── */
+    .qc-content { max-width: var(--container-max); margin: 32px auto 0; padding: 0 var(--c-pad, 24px); }
+
+    /* ── Section visibility ── */
+    .qc-section { display: none; }
+    .qc-section.visible { display: block; }
+
+    /* ── Gate content card ── */
+    .qc-card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.07); overflow: hidden;
+    }
+
+    /* Wrap existing qg-root so it gets padding */
+    .qc-gate-wrap { padding: 24px; }
+
+    /* ── Muted, professional banner & body (override bright homepage colors for this page only) ── */
+    .qc-gate-wrap .qg-banner {
+      background: var(--navy,#0d2b45) !important;
+      position: relative;
+    }
+    .qc-gate-wrap .qg-banner::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+    }
+    .qc-gate-wrap .qg-banner--proj::before { background: #0891b2; }
+    .qc-gate-wrap .qg-banner--sys::before  { background: #3b5bdb; }
+    .qc-gate-wrap .qg-banner--sw::before   { background: #8b5cf6; }
+
+    .qc-gate-wrap .qg-body--proj,
+    .qc-gate-wrap .qg-body--sys,
+    .qc-gate-wrap .qg-body--sw {
+      background: #fafbfc !important;
+    }
+
+    /* ── Not found ── */
+    .qc-not-found {
+      text-align: center; padding: 80px 24px; background: #fff;
+      border-radius: 14px; box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    }
+    .qc-not-found h2 {
+      font-family: var(--font-head,'Barlow Condensed',sans-serif);
+      font-size: 1.8rem; font-weight: 800; color: var(--navy,#0d2b45); margin-bottom: 10px;
+    }
+    .qc-not-found p { color: #6b7f94; margin-bottom: 24px; }
+
+    @media (max-width: 640px) {
+      .qc-hero { padding: 24px 0 20px; }
+      .qc-hero__inner, .qc-content { padding: 0 14px; }
+      .qc-tabs { gap: 6px; }
+      .qc-tab { padding: 8px 14px; font-size: .8rem; }
+      .qc-gate-wrap { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="scroll-progress-bar"></div>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="navbar__inner">
+    <a href="/" class="navbar__brand">
+      <img src="/images/logo.webp" alt="IAST Software Solutions" class="navbar__logo"/>
+    </a>
+    <div class="navbar__spacer" aria-hidden="true"></div>
+    <ul class="navbar__nav" role="list">
+      <li><a href="/" class="navbar__link">Home</a></li>
+
+      <!-- Quality Dropdown -->
+      <li class="navbar__dropdown">
+        <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+          Quality <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+        </a>
+        <ul class="navbar__dropdown-menu" role="menu">
+          <li><a href="/#vision" class="navbar__dropdown-item" role="menuitem">Quality Vision</a></li>
+          <li><a href="/#culture" class="navbar__dropdown-item" role="menuitem">Quality Culture</a></li>
+          <li><a href="/#gates" class="navbar__dropdown-item" role="menuitem">Quality Gates</a></li>
+          <li><a href="/#issue-management" class="navbar__dropdown-item" role="menuitem">Issue Management</a></li>
+        </ul>
+      </li>
+
+
+      <!-- Documents Dropdown -->
+      <li class="navbar__dropdown">
+        <a href="javascript:void(0)" class="navbar__link navbar__dropdown-toggle" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
+          Documents <i class="fas fa-chevron-down navbar__dropdown-icon" aria-hidden="true"></i>
+        </a>
+        <ul class="navbar__dropdown-menu" role="menu">
+          <li><a href="/master-list.html" class="navbar__dropdown-item" role="menuitem">Master List</a></li>
+          <li><a href="/generic-template.html" class="navbar__dropdown-item" role="menuitem">Generic Templates</a></li>
+          <li><a href="/lessons-learned.html" class="navbar__dropdown-item" role="menuitem">Lessons Learned</a></li>
+        </ul>
+      </li>
+
+      <!-- ASPICE PRM – standalone link (no dropdown) -->
+      <li><a href="/#prm" class="navbar__link">ASPICE PRM</a></li>
+
+      <!-- Compact Search Box -->
+      <li class="navbar__search-item">
+        <form class="navbar__search-form" role="search" action="/search.html" method="GET">
+          <div class="navbar__search-box">
+            <i class="fas fa-search navbar__search-icon" aria-hidden="true"></i>
+            <input type="text" name="search" class="navbar__search-input" placeholder="Search..." aria-label="Search documents and processes"/>
+            <button type="submit" class="navbar__search-btn" aria-label="Submit search">
+              <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </form>
+      </li>
+    </ul>
+
+    <button class="navbar__toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ PAGE BODY ═══ -->
+<main class="qc-page">
+
+  <!-- Hero -->
+  <div class="qc-hero" id="qc-hero">
+    <div class="qc-hero__inner">
+
+      <a href="/#gates" class="qc-back">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="10 3 5 8 10 13"/>
+        </svg>
+        Back to Quality Gates
+      </a>
+
+      <div class="qc-hero__title-row">
+        <span class="qc-hero__badge" id="qc-badge">Gates</span>
+        <h1 class="qc-hero__h1" id="qc-title">Quality Gate Checks</h1>
+      </div>
+      <p class="qc-hero__sub" id="qc-sub">Select a gate type below to view the detailed quality checks.</p>
+
+      <!-- Tab switcher -->
+      <div class="qc-tabs">
+        <a href="quality-checks.html?type=project"  class="qc-tab" id="tab-project">&#9679; Project</a>
+        <a href="quality-checks.html?type=system"   class="qc-tab" id="tab-system">&#9679; System</a>
+        <a href="quality-checks.html?type=software" class="qc-tab" id="tab-software">&#9679; Software</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="qc-content">
+
+    <!-- ═══ PROJECT ═══ -->
+    <div class="qc-section" id="section-project">
+      <div class="qc-card">
+        <div class="qc-gate-wrap">
+          <div class="qg-root">
+            <div class="qg-tier">
+              <div class="qg-banner qg-banner--proj">IAST Project Quality Gates</div>
+              <div class="qg-body qg-body--proj">
+                
+                
+                <div class="qg-namebox">
+                  <div class="qg-namebox__title">Project Gate Quality Checks</div>
+                  <div class="qg-namebox__grid">
+                    <div class="qg-namebox__item">
+                      <strong>PI</strong>
+                      <span>Project Initiation Gate - Quality checks</span>
+                      <p>Customer requirements received &amp; understood; Project scope defined; NDA/contracts available; Roles assigned; Risk assessment completed; Resource planning initiated; Repository created; Standards identified; ASPICE tailoring</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>PCP</strong>
+                      <span>Project Concept Gate - Quality checks</span>
+                      <p>Feasibility analysis; Requirements reviewed; High-level architecture; Initial estimation; Safety/security considerations; Technical risks; Quality objectives defined</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>PPL</strong>
+                      <span>Project Planning Gate - Quality checks</span>
+                      <p>PMP approved; Development plan baselined; CM Plan; QA Plan; V&amp;V strategy; Traceability; Competency verified; Metrics defined</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>PDT</strong>
+                      <span>Project Development Gate - Quality checks</span>
+                      <p>Requirements baseline; Architecture/design reviews; Coding compliance; Peer reviews; Unit testing; Integration testing; Defect &amp; risk monitoring; Process compliance</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>PRL</strong>
+                      <span>Project Release Gate - Quality checks</span>
+                      <p>V&amp;V completed; Defect analysis; Traceability complete; Regression, performance &amp; security testing; Release notes; Delivery approval</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>PCL</strong>
+                      <span>Project Closure Gate - Quality checks</span>
+                      <p>Deliverables submitted; Sign-off received; Lessons learned; Metrics closure; Risks archived; Documentation archived; Resource release</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SYSTEM ═══ -->
+    <div class="qc-section" id="section-system">
+      <div class="qc-card">
+        <div class="qc-gate-wrap">
+          <div class="qg-root">
+            <div class="qg-tier">
+              <div class="qg-banner qg-banner--sys">IAST System Quality Gate</div>
+              <div class="qg-body qg-body--sys">
+                
+                <div class="qg-namebox">
+                  <div class="qg-namebox__title">System Gate Quality Checks</div>
+                  <div class="qg-namebox__grid">
+                    <div class="qg-namebox__item">
+                      <strong>SYSI</strong>
+                      <span>System Initiation Gate - Quality checks</span>
+                      <p>System scope; Stakeholder Requirements gathering; Interfaces identified.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SYSCF</strong>
+                      <span>System Concept Freeze Gate - Quality checks</span>
+                      <p>Requirements reviewed; Functional analysis; Initial architecture; Safety review.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SYSPL</strong>
+                      <span>System Planning Gate - Quality checks</span>
+                      <p>Development plan approved; Traceability established; Verification strategy.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SYSDT</strong>
+                      <span>System Development Gate - Quality checks</span>
+                      <p>Architecture review; Interface consistency; Integration testing; Requirement coverage.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SYSRL</strong>
+                      <span>System Release Gate - Quality checks</span>
+                      <p>Validation completed; Traceability complete; Acceptance criteria verified.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SYSCL</strong>
+                      <span>System Closure Gate - Quality checks</span>
+                      <p>Documents archived; Lessons learned; Pending issues tracked.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SOFTWARE ═══ -->
+    <div class="qc-section" id="section-software">
+      <div class="qc-card">
+        <div class="qc-gate-wrap">
+          <div class="qg-root">
+            <div class="qg-tier">
+              <div class="qg-banner qg-banner--sw">IAST SW Quality Gate</div>
+              <div class="qg-body qg-body--sw">
+                
+                <div class="qg-namebox">
+                  <div class="qg-namebox__title">Software Gate Quality Checks</div>
+                  <div class="qg-namebox__grid">
+                    <div class="qg-namebox__item">
+                      <strong>SWI</strong>
+                      <span>Software Initiation Gate - Quality checks</span>
+                      <p>Scope identified; Standards identified; Development environment ready.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SWCP</strong>
+                      <span>Software Concept Phase Gate - Quality checks</span>
+                      <p>Requirements analyzed; Feasibility reviewed; Initial architecture.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SWPL</strong>
+                      <span>Software Planning Gate - Quality checks</span>
+                      <p>Development plan approved; Coding standards; Unit test strategy; CI/CD readiness.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SWDT</strong>
+                      <span>Software Development Gate - Quality checks</span>
+                      <p>Design review; Code review; Static analysis; Unit testing; Integration testing.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SWRL</strong>
+                      <span>Software Release Gate - Quality checks</span>
+                      <p>Qualification testing; Regression testing; Release package verified.</p>
+                    </div>
+                    <div class="qg-namebox__item">
+                      <strong>SWCL</strong>
+                      <span>Software Closure Gate - Quality checks</span>
+                      <p>Source code archived; Metrics captured; Lessons learned.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Not found fallback -->
+    <div class="qc-section" id="section-invalid">
+      <div class="qc-not-found">
+        <h2>Gate type not recognised</h2>
+        <p>Please choose a valid gate type using the tabs above.</p>
+        <a href="/#gates" class="btn-primary" style="display:inline-block;padding:11px 28px;border-radius:7px;font-weight:700;text-decoration:none;">&#8592; Back to Quality Gates</a>
+      </div>
+    </div>
+
+  </div><!-- /.qc-content -->
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer style="background:var(--navy);color:rgba(255,255,255,.55);text-align:center;padding:22px;font-size:.8rem;">
+  &copy; <span id="qc-year"></span> IAST Software Solutions &mdash; Quality Portal
+</footer>
+
+<script src="/js/quality-checks.js"></script>
+<script src="/js/navigation.js"></script>
+<script src="/js/script.js?v=8"></script>
+<script>
+  (function(){
+    /* Scroll progress */
+    var bar = document.getElementById('scroll-progress-bar');
+    if (bar) {
+      window.addEventListener('scroll', function(){
+        var s = document.documentElement;
+        bar.style.width = (s.scrollTop / (s.scrollHeight - s.clientHeight) * 100) + '%';
+      }, { passive: true });
+    }
+    /* Footer year */
+    var y = document.getElementById('qc-year');
+    if (y) y.textContent = new Date().getFullYear();
+  })();
+</script>
+
+</body>
+</html>

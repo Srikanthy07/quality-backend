@@ -1,0 +1,708 @@
+[
+  {
+    "id": "SYS2-001",
+    "process": "SYS.2",
+    "documentName": "SYS.2 Requirements Management Plan Template",
+    "version": "1.0",
+    "description": "Template for authoring a Requirements Management Plan. Includes sections for requirements elicitation approach, documentation standards, traceability matrix structure, change control process, and stakeholder sign-off records.",
+    "filePath": "documents/aspice-prm/SYS/sys2/1700_ProjectName_RMP_1.0_Reviewed.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SYS2-002",
+    "process": "SYS.2",
+    "documentName": "SYS.2 Requirements Analysis Report Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for capturing system requirements analysis results. Contains sheets for requirement listing, feasibility ratings, consistency checks, review comments, and open issue log.",
+    "filePath": "documents/aspice-prm/SYS/sys2/1501_ProjectName_AnalysisReport_Reviewed.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "SYS3-001",
+    "process": "SYS.3",
+    "documentName": "SYS.3 System Architecture Review Checklist Template",
+    "version": "1.0",
+    "description": "Checklist template for conducting formal system architecture design reviews. Covers architectural completeness, requirements allocation, interface definitions, design rationale, and ASPICE SYS.3 compliance criteria.",
+    "filePath": "documents/aspice-prm/SYS/sys3/Review_Checklist_System_Architecture.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "SYS4-001",
+    "process": "SYS.4",
+    "documentName": "SYS.4 System Integration Verification Measure Template",
+    "version": "1.0",
+    "description": "Template for defining and recording system integration verification measures. Includes sections for test case ID, verification method, pass/fail criteria, test evidence references, and defect linkage.",
+    "filePath": "documents/aspice-prm/SYS/sys4/0860_ProjectName_Verification_Measure.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SYS5-001",
+    "process": "SYS.5",
+    "documentName": "SYS.5 System Verification Measure Template",
+    "version": "1.0",
+    "description": "Template for planning and recording system-level verification activities. Covers verification objectives, test specifications, execution records, deviation handling, and sign-off by responsible engineer.",
+    "filePath": "documents/aspice-prm/SYS/sys5/0860_ProjectName_Verification_Measure.docx",
+    "type": "DOCX"
+  },
+  {
+  "id": "SWE1-001",
+  "process": "SWE.1",
+  "documentName": "SWE.1 SW Requirements Management Plan Template",
+  "version": "1.0",
+  "description": "Template for planning and managing software requirements throughout the project lifecycle, including requirement identification, traceability, change management, review activities, responsibilities, and compliance with ASPICE SWE.1 process requirements.",
+  "filePath": "documents/aspice-prm/SWE/swe1/1700_ProjectName_RMP_1.0_Reviewed.docx",
+  "type": "DOCX"
+},
+  {
+    "id": "SWE1-002",
+    "process": "SWE.1",
+    "documentName": "SWE.1 SW Requirements Analysis Report Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for SW requirements analysis. Contains sheets for SW requirement ID, derivation from system requirements, interface requirement listing, consistency check results, and baseline approval status.",
+    "filePath": "documents/aspice-prm/SWE/swe1/1501_ProjectName_AnalysisReport_Reviewed.xlsx",
+    "type": "XLSX"
+  },
+  
+  {
+    "id": "SWE2-001",
+    "process": "SWE.2",
+    "documentName": "SWE.2 Software Architecture Design Template",
+    "version": "1.0",
+    "description": "Template for documenting the software architectural design. Includes sections for component decomposition, inter-component interfaces, design decisions, requirements allocation table, and architecture review sign-off.",
+    "filePath": "documents/aspice-prm/SWE/swe2/CGVCU_SWE.2_SWArch_Template.doc",
+    "type": "DOC"
+  },
+  {
+    "id": "SWE2-002",
+    "process": "SWE.2",
+    "documentName": "SWE.2 Software Architecture Guideline Template",
+    "version": "1.0",
+    "description": "Organisational guideline template for creating ASPICE-compliant software architecture documents. Covers naming conventions, diagram standards, review process, tool usage, and mandatory content checklist.",
+    "filePath": "documents/aspice-prm/SWE/swe2/Software Architecture Guideline.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SWE3-001",
+    "process": "SWE.3",
+    "documentName": "SWE.3 SW Detailed Design & Unit Construction Guideline Template",
+    "version": "1.0",
+    "description": "Template guideline for SW detailed design and unit construction activities. Includes sections for unit design specifications, coding standards reference, peer review checklist, unit test linkage, and construction completion criteria.",
+    "filePath": "documents/aspice-prm/SWE/swe3/Software_Detail_Design_Unit_Construction_Guideline.doc",
+    "type": "DOC"
+  },
+  {
+    "id": "SWE4-001",
+    "process": "SWE.4",
+    "documentName": "SWE.4 Software Unit Verification Measure Template",
+    "version": "1.0",
+    "description": "Template for planning and recording software unit verification. Contains unit test case definitions, structural coverage targets, execution log, defect records, and sign-off table for unit verification completion.",
+    "filePath": "documents/aspice-prm/SWE/swe4/0860_ProjectName_Verification_Measure.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SWE5-001",
+    "process": "SWE.5",
+    "documentName": "SWE.5 SW Component Integration Verification Measure Template",
+    "version": "1.0",
+    "description": "Template for documenting SW component integration verification results. Covers integration order plan, interface test cases, regression test scope, integration defect log, and verification completion sign-off.",
+    "filePath": "documents/aspice-prm/SWE/swe5/0860_ProjectName_Verification_Measure.docx",
+    "type": "DOCX"
+  },
+  {
+  "id": "SWE5-002",
+  "process": "SWE.5",
+  "documentName": "SWE.5 Software Test Plan Template",
+  "version": "1.6",
+  "description": "Template for planning and managing Software Qualification Testing (SWQT). Covers test objectives, scope, strategy, planning, test methods, test environment, entry and exit criteria, pass/fail criteria, stakeholders, roles and responsibilities, schedules, KPIs, test deliverables, and test completion activities to verify that the software satisfies all specified requirements.",
+  "filePath": "documents/aspice-prm/SWE/swe5/0852_Software_Test_Plan.docx",
+  "type": "DOCX"
+},
+  {
+    "id": "SWE6-001",
+    "process": "SWE.6",
+    "documentName": "SWE.6 Software Verification Measure Template",
+    "version": "1.0",
+    "description": "Template for planning and recording software verification activities. Includes sections for verification objectives, test specifications, execution records, deviation handling, and sign-off by responsible engineer.",
+    "filePath": "documents/aspice-prm/SWE/swe6/0860_ProjectName_Verification_Measure.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP1-001",
+    "process": "SUP.1",
+    "documentName": "SUP.1 Quality Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the project Quality Management Plan. Includes sections for QA objectives, process compliance activities, audit schedule, non-conformance handling procedure, quality records list, and QA reporting structure.",
+    "filePath": "documents/aspice-prm/SUP/sup1/0813_ProjectName_QMP.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP1-002",
+    "process": "SUP.1",
+    "documentName": "SUP.1 Problem Record Tracking Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for logging and tracking quality non-conformances. Contains columns for problem ID, detection date, severity, process area, root cause category, corrective action owner, and closure status.",
+    "filePath": "documents/aspice-prm/SUP/sup1/1307_ProjectName_Problem_Record.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "SUP1-003",
+    "process": "SUP.1",
+    "documentName": "SUP.1 Quality Management Plan v1.0 Template",
+    "version": "1.0",
+    "description": "Comprehensive QMP template with detailed sections for quality policy, process compliance approach, audit types and frequency, metrics collection plan, non-conformance escalation path, and management review agenda.",
+    "filePath": "documents/aspice-prm/SUP/sup1/ProjectName_Quality_Management_Plan_v1.0.docx",
+    "type": "DOCX"
+  },
+  {
+  "id": "SUP1-004",
+  "process": "SUP.1",
+  "documentName": "SUP.1 Internal Quality Assessment Report Template",
+  "version": "1.0",
+  "description": "Template for conducting internal ASPICE quality assessments. Includes project summary, detailed observations, process capability ratings, interview statements, recommendations, and evidence tracking for quality compliance reviews.", 
+  "filePath": "documents/aspice-prm/SUP/sup1/ProjectName_ASPICEProcess_ModuleName_QA_Report.docx",
+  "type": "DOCX"
+},
+{
+  "id": "SUP1-005",
+  "process": "SUP.1",
+  "documentName": "SUP.1 Quality Gate Dashboard",
+  "version": "1.0",
+  "description": "Quality Gate Dashboard for monitoring project quality metrics, review status, process compliance, quality gate results, and overall project readiness using predefined assessment criteria.",
+  "filePath": "documents/aspice-prm/SUP/sup1/IAST Quality Gate Dashboard_Reviewed.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-001",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "ASPICE v3.1 vs v4.0",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/ASPICE v3.1 vs v4.0.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-002",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "ASPICE Functional Safety Checklist",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/ASPICE_Functional_Safety_Checklist.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-003",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "Assessment Questionnaires (Generic Practices)",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/Assessment Questionnaires (Generic Practices).xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-004",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "BR01 System Assessment Questionnaires (Generic Practices)",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/BR01_System_Assessment Questionnaires (Generic Practices).xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-005",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "Details BP",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/Details_BP.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-006",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "Generic Practices Checklist MAN.3",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/Generic Practices Checklist_MAN.3.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-007",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "Generic Practices Checklist v4.0 (L2)",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/Generic Practices Checklist_v4.0 (L2)_Reviewed.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-008",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "MAN.3 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/MAN.3_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-009",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "MAN.3 Questionnaires",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/MAN.3_Questionnaires.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-010",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "MAN.3 SUP Presentation",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/MAN.3_SUP_ppt.pptx",
+  "type": "PPTX"
+},
+{
+  "id": "SUP1-CHK-011",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "MAN.5 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/MAN.5_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-012",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SUP.8 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SUP.8_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-013",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SUP.9 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SUP.9_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-014",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SUP.10 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SUP.10_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-015",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.1 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.1_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-016",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.2 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.2_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-017",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.3 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.3_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-018",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.4 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.4_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-019",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.5 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.5_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-020",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.6 Checklists & Questionnaires",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.6_Checklists_Questionnaires.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-021",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SWE.6 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SWE.6_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-022",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SYS.1 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SYS.1_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-023",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SYS.2 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SYS.2_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "SUP1-CHK-024",
+  "process": "SUP.1",
+  "category": "ASPICE_Assessment_Checklist",
+  "documentName": "SYS.3 Quality Assessment",
+  "version": "1.0",
+  "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Assessment_Checklist/SYS.3_Quality_Assessment.xlsx",
+  "type": "XLSX"
+},
+  {
+    "id": "SUP8-001",
+    "process": "SUP.8",
+    "documentName": "SUP.8 Software Configuration Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Software Configuration Management Plan. Covers CI identification scheme, branching and baselining strategy, change control workflow, configuration status accounting, and release packaging procedure.",
+    "filePath": "documents/aspice-prm/SUP/sup8/0804_ProjectName_SCM.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP8-002",
+    "process": "SUP.8",
+    "documentName": "SUP.8 Configuration Management Plan v1.0 Template",
+    "version": "1.0",
+    "description": "Detailed CM plan template with sections for CM roles and responsibilities, CI type registry, version numbering convention, audit schedule, tool configuration, and CM metrics reporting.",
+    "filePath": "documents/aspice-prm/SUP/sup8/1603_ProjectName_Configuration_Management_Plan_1.0.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP8-003",
+    "process": "SUP.8",
+    "documentName": "SUP.8 Baseline Strategy Presentation Template",
+    "version": "1.0",
+    "description": "Slide deck template for presenting the project baseline strategy to stakeholders. Covers baseline types (functional, allocated, product), baseline triggers, approval workflow, and deviation management approach.",
+    "filePath": "documents/aspice-prm/SUP/sup8/Baseline Strategy.pptx",
+    "type": "PPTX"
+  },
+  {
+    "id": "SUP9-001",
+    "process": "SUP.9",
+    "documentName": "SUP.9 Problem Resolution Plan Template",
+    "version": "1.0",
+    "description": "Template for the Problem Resolution Management Plan. Includes problem classification criteria, resolution workflow steps, escalation thresholds, RCA methodology selection, corrective action tracking, and KPI definitions.",
+    "filePath": "documents/aspice-prm/SUP/sup9/0827_ProjectName_Problem_Resolution_Plan.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP9-002",
+    "process": "SUP.9",
+    "documentName": "SUP.9 A3 Problem Solving Template",
+    "version": "1.0",
+    "description": "A3-format spreadsheet template for structured problem solving. Contains sections for problem statement, current state, target state, root cause analysis, countermeasures, implementation plan, and results verification.",
+    "filePath": "documents/aspice-prm/SUP/sup9/ProjectName_A3_Problem_Solving_Doc.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "SUP9-003",
+    "process": "SUP.9",
+    "documentName": "SUP.9 Fishbone (Ishikawa) Analysis Template",
+    "version": "1.0",
+    "description": "Cause-and-effect diagram template for root cause analysis. Pre-structured with the 6M fishbone categories (Man, Machine, Method, Material, Measurement, Environment) and a linked corrective action summary table.",
+    "filePath": "documents/aspice-prm/SUP/sup9/TE-10300_Fishbone_Analysis 3.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP10-001",
+    "process": "SUP.10",
+    "documentName": "SUP.10 Change Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Change Request Management Plan. Covers CR submission process, impact analysis workflow, classification criteria, approval authority matrix, implementation tracking, and verification of change closure.",
+    "filePath": "documents/aspice-prm/SUP/sup10/0828_ProjectName_Change_Management_Plan_Reviewed.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP10-002",
+    "process": "SUP.10",
+    "documentName": "SUP.10 Change Request Tracking Sheet Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for logging and tracking all change requests. Contains columns for CR ID, submission date, requestor, priority, impact area, approval status, implementation owner, and verification evidence link.",
+    "filePath": "documents/aspice-prm/SUP/sup10/1316_ProjectName_Change_Request.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "MAN3-001",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Project Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Project Management Plan. Includes sections for project scope statement, WBS structure, schedule baselines, resource allocation table, effort estimation, risk summary, and project governance approach.",
+    "filePath": "documents/aspice-prm/MAN/man3/0812_ProjectName_Project_Management_Plan_v1.0.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "MAN3-002",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Communication Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the project Communication Management Plan. Includes sections for stakeholder communication needs, reporting channels and frequency, escalation paths, meeting cadence, and document distribution matrix.",
+    "filePath": "documents/aspice-prm/MAN/man3/0800_ProjectName_Communication_Management_Plan.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "MAN3-003",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Requirements Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Requirements Management Plan at project level. Covers requirements elicitation approach, traceability strategy, baseline and change control process, and stakeholder review/approval workflow.",
+    "filePath": "documents/aspice-prm/MAN/man3/1700_ProjectName_RMP.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "MAN3-004",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Procurement Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Procurement Management Plan. Includes sections for supplier selection criteria, contract types, purchase approval workflow, vendor performance tracking, and procurement risk considerations.",
+    "filePath": "documents/aspice-prm/MAN/man3/ProjectName_Procurement_Management_Plan.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "MAN3-005",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Team Skill Matrix Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for tracking team skills against project role requirements. Contains skill domains, individual proficiency levels, training needs column, planned training dates, and manager review sign-off.",
+    "filePath": "documents/aspice-prm/MAN/man3/ProjectName_Skill_Matrix_Reviewed.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "MAN3-006",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Technical Feasibility Checklist Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for assessing technical feasibility at project initiation. Contains checklist items for technology readiness, resource availability, architectural risk, dependency analysis, and feasibility sign-off.",
+    "filePath": "documents/aspice-prm/MAN/man3/Technical_Feasibility_Checklists.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "MAN3-007",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Lesson Learned Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for capturing project lessons learned, including issues encountered, root causes, corrective actions, best practices, and recommendations for future project improvements.",
+    "filePath": "documents/aspice-prm/MAN/man3/1307_ProjectName_Lesson_Learned_Reviewed.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "MAN3-008",
+    "process": "MAN.3",
+    "documentName": "MAN.3 Project Task Tracker Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for tracking project tasks day to day. Contains columns for task ID, owner, planned/actual dates, status, dependencies, blockers, and percentage completion.",
+    "filePath": "documents/aspice-prm/MAN/man3/Project Task Tracker.xlsx",
+    "type": "XLSX"
+  },
+  {
+  "id": "MAN3-009",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Cost Management Plan Template",
+  "version": "1.0",
+  "description": "Template for managing project cost planning, budgeting, cost monitoring, variance analysis, reporting, and change control throughout the project lifecycle.",
+  "filePath": "documents/aspice-prm/MAN/man3/ProjectName_Cost_Management_Plan.docx",
+  "type": "DOCX"
+},
+{
+  "id": "MAN3-010",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Communication Matrix Template",
+  "version": "1.0",
+  "description": "Communication matrix for defining stakeholders, communication methods, frequency, owners, recipients, and reporting responsibilities.",
+  "filePath": "documents/aspice-prm/MAN/man3/ProjectName_Communication_Matrix_Reviewed.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "MAN3-011",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Release Plan Template",
+  "version": "1.0",
+  "description": "Template for planning project releases, including release details, artifacts, issue summary, resolutions, impacts, and release notes.",
+  "filePath": "documents/aspice-prm/MAN/man3/0816_ProjectName_Release_Plan.docx",
+  "type": "DOCX"
+},
+{
+  "id": "MAN3-012",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Security Team Skill Matrix",
+  "version": "1.0",
+  "description": "Spreadsheet for tracking security team competencies, proficiency levels, training requirements, and skill assessments.",
+  "filePath": "documents/aspice-prm/MAN/man3/Security Team Skill Matrix.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "MAN3-013",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Quality Team Skill Matrix",
+  "version": "1.0",
+  "description": "Spreadsheet for maintaining quality team skills, competency levels, certification status, and development plans.",
+  "filePath": "documents/aspice-prm/MAN/man3/Quality Team Skill Matrix.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "MAN3-014",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Training Plan Template",
+  "version": "1.0",
+  "description": "Template for defining project training objectives, stakeholders, technologies, training schedule, logistics, and training checklist.",
+  "filePath": "documents/aspice-prm/MAN/man3/0800_ProjectName_Training_Plan.docx",
+  "type": "DOCX"
+},
+{
+  "id": "MAN3-015",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Work Breakdown Structure (WBS) Template",
+  "version": "1.0",
+  "description": "Spreadsheet template for organizing project deliverables into a hierarchical work breakdown structure with work packages and tracking.",
+  "filePath": "documents/aspice-prm/MAN/man3/1409_ProjectName_WBS.xlsx",
+  "type": "XLSX"
+},
+{
+  "id": "MAN3-016",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Project Status Report Template",
+  "version": "1.0",
+  "description": "Presentation template for weekly or monthly project status reporting, including milestones, quality goals, issues, next week's plan, support required, and deliverables.",
+  "filePath": "documents/aspice-prm/MAN/man3/1506_ProjectName_Project Status Report_Reviewed.pptx",
+  "type": "PPTX"
+},
+{
+  "id": "MAN3-017",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Scope Management Plan Template",
+  "version": "1.0",
+  "description": "Template for defining project scope, WBS, scope statement, scope verification, change control, and scope management responsibilities.",
+  "filePath": "documents/aspice-prm/MAN/man3/ProjectName_Scope_Management_Plan_Reviewed.docx",
+  "type": "DOCX"
+},
+{
+  "id": "MAN3-018",
+  "process": "MAN.3",
+  "documentName": "MAN.3 Schedule Management Plan Template",
+  "version": "1.0",
+  "description": "Template for project schedule planning, scheduling approach, schedule monitoring, control process, and schedule change thresholds.",
+  "filePath": "documents/aspice-prm/MAN/man3/ProjectName_Schedule_Management_Plan_Reviewed.docx",
+  "type": "DOCX"
+},
+  {
+    "id": "MAN5-001",
+    "process": "MAN.5",
+    "documentName": "MAN.5 Risk & Issue Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Risk and Issue Management Plan. Covers risk identification sources, likelihood/impact scoring matrix, risk treatment options, issue escalation criteria, owner assignment, and review cadence.",
+    "filePath": "documents/aspice-prm/MAN/man5/0819_ProjectName_Risk&Issue_Management_Plan.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "MAN5-002",
+    "process": "MAN.5",
+    "documentName": "MAN.5 Risk Register Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for maintaining the project risk register. Contains columns for risk ID, description, category, probability score, impact score, risk level, mitigation action, owner, status, and residual risk rating.",
+    "filePath": "documents/aspice-prm/MAN/man5/1408_ProjectName_Risk_Register.xls",
+    "type": "XLS"
+  },
+  {
+    "id": "MAN5-003",
+    "process": "MAN.5",
+    "documentName": "MAN.5 Risk Management Plan Template",
+    "version": "1.0",
+    "description": "Template for the Risk Management Plan. Covers risk identification sources, likelihood/impact scoring matrix, risk treatment options, issue escalation criteria, owner assignment, and review cadence.",
+    "filePath": "documents/aspice-prm/MAN/man5/0819_Risk_Management_Plan_Template.doc",
+    "type": "DOC"
+  },
+  {
+    "id": "MAN5-004",
+    "process": "MAN.5",
+    "documentName": "MAN.5 Corrective Action Report (CAR) Template",
+    "version": "1.0",
+    "description": "Template for recording a Corrective Action Report. Includes sections for problem description, root cause analysis, corrective action plan, responsible owner, target closure date, and effectiveness verification.",
+    "filePath": "documents/aspice-prm/MAN/man5/1402_ProjectName_CAR.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "MAN6-001",
+    "process": "MAN.6",
+    "documentName": "MAN.6 Measurement & CSAT Feedback Template",
+    "version": "1.0",
+    "description": "Spreadsheet template for project measurement and customer satisfaction tracking. Includes sheets for KPI definitions, monthly measurement data entry, trend charts, CSAT survey results aggregation, and management reporting summary.",
+    "filePath": "documents/aspice-prm/MAN/man6/ProjectName_CSAT_Feedback.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "PIM3-001",
+    "process": "PIM.3",
+    "documentName": "PIM.3 Continual Process Improvement Policy Template",
+    "version": "1.0",
+    "description": "Template for the organisational process improvement policy. Includes sections for improvement goal setting, process gap analysis method, improvement proposal format, pilot plan structure, deployment checklist, and effectiveness review criteria.",
+    "filePath": "documents/aspice-prm/PIM/pim3/Continual Improvement Policy.docx",
+    "type": "DOCX"
+  },
+  {
+    "id": "SUP1-REF-001",
+    "process": "SUP.1",
+    "category": "ASPICE_Assessment_Checklist",
+    "documentName": "ASPICE v3.1 vs v4.0 Reference (PDF)",
+    "version": "1.0",
+    "description": "PDF reference document comparing ASPICE v3.1 and ASPICE v4.0 process areas, capability levels, and assessment criteria changes.",
+    "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_v3.1_vs_v4.0.pdf",
+    "type": "PDF"
+  },
+  {
+    "id": "SUP1-REF-002",
+    "process": "SUP.1",
+    "category": "ASPICE_Assessment_Checklist",
+    "documentName": "ASPICE Functional Safety Checklist (Root Copy)",
+    "version": "1.0",
+    "description": "Checklist for evaluating functional safety compliance across ASPICE process areas. This is an alternate copy stored at the SUP.1 root level.",
+    "filePath": "documents/aspice-prm/SUP/sup1/ASPICE_Functional_Safety_Checklist.xlsx",
+    "type": "XLSX"
+  },
+  {
+    "id": "SUP1-REF-003",
+    "process": "SUP.1",
+    "category": "ASPICE_Assessment_Checklist",
+    "documentName": "Assessment Questionnaires",
+    "version": "1.0",
+    "description": "Questionnaire template for conducting ASPICE process assessments. Covers base practices, generic practices, and work product assessment criteria.",
+    "filePath": "documents/aspice-prm/SUP/sup1/Assessment_Questionnaires.xlsx",
+    "type": "XLSX"
+  }
+]
