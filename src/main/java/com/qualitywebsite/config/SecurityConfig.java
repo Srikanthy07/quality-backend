@@ -24,6 +24,10 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+
 @Configuration
 @EnableWebSecurity
 @Slf4j
@@ -61,6 +65,16 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 
     @Bean
@@ -142,6 +156,11 @@ public class SecurityConfig {
         http
             .sessionManagement(session -> session
                 .sessionFixation(fixation -> fixation.changeSessionId())
+                .invalidSessionUrl("/admin/login?expired=true")
+                .maximumSessions(2)
+                .maxSessionsPreventsLogin(false)
+                .sessionRegistry(sessionRegistry())
+                .expiredUrl("/admin/login?expired=true")
             )
 
             .authorizeHttpRequests(auth -> auth
@@ -166,7 +185,6 @@ public class SecurityConfig {
                     "/admin/login",
                     "/admin/forgot-password",
                     "/admin/reset-password",
-                    "/admin/accept-invitation",
                     "/admin/css/**",
                     "/admin/js/**",
                     "/h2-console/**"

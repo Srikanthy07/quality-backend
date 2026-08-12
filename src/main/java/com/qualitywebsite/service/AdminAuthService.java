@@ -1,9 +1,7 @@
 package com.qualitywebsite.service;
 
-import com.qualitywebsite.entity.AdminInvitationToken;
 import com.qualitywebsite.entity.AdminPasswordResetToken;
 import com.qualitywebsite.entity.AdminUser;
-import com.qualitywebsite.repository.AdminInvitationTokenRepository;
 import com.qualitywebsite.repository.AdminPasswordResetTokenRepository;
 import com.qualitywebsite.repository.AdminUserRepository;
 import com.qualitywebsite.security.LoginRateLimiterService;
@@ -31,7 +29,6 @@ public class AdminAuthService {
 
     private final AdminUserRepository adminUserRepository;
     private final AdminPasswordResetTokenRepository passwordResetTokenRepository;
-    private final AdminInvitationTokenRepository invitationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final ActivityLogService activityLogService;
     private final LoginRateLimiterService loginRateLimiterService;
@@ -195,100 +192,6 @@ public class AdminAuthService {
         return Map.of("username", username, "status", "ACTIVE", "lastLoginAt", "N/A");
     }
 
-    @Transactional(readOnly = true)
-    public List<Map<String, Object>> getAllAdmins() {
-        return adminUserRepository.findAll().stream().map(u -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", u.getId());
-            map.put("username", u.getUsername());
-            map.put("email", u.getEmail() != null ? u.getEmail() : "N/A");
-            map.put("enabled", u.isEnabled());
-            map.put("status", u.isEnabled() ? "ACTIVE" : "DISABLED");
-            map.put("lastLoginAt", u.getLastLoginAt() != null ? u.getLastLoginAt().toString() : "Never");
-            map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "N/A");
-            return map;
-        }).toList();
-    }
-
-    @Transactional
-    public void inviteAdmin(String email, String currentAdminUsername) {
-        if (!StringUtils.hasText(email)) {
-            throw new IllegalArgumentException("Email address cannot be empty.");
-        }
-        String cleanEmail = email.trim().toLowerCase(Locale.ROOT);
-
-        if (adminUserRepository.existsByEmailIgnoreCase(cleanEmail)) {
-            throw new IllegalArgumentException("An administrator account already exists with this email address.");
-        }
-
-        AdminUser currentAdmin = adminUserRepository.findByUsername(currentAdminUsername)
-                .orElseThrow(() -> new IllegalStateException("Authenticated admin user not found."));
-
-        String rawToken = generateRandomToken();
-        String tokenHash = hashToken(rawToken);
-
-        // Delete any existing unconsumed invitation for this email
-        invitationTokenRepository.findByEmailIgnoreCaseAndUsedFalse(cleanEmail)
-                .ifPresent(invitationTokenRepository::delete);
-
-        AdminInvitationToken token = AdminInvitationToken.builder()
-                .email(cleanEmail)
-                .tokenHash(tokenHash)
-                .invitedByAdmin(currentAdmin)
-                .expiryDate(LocalDateTime.now().plusHours(48))
-                .used(false)
-                .build();
-
-        invitationTokenRepository.save(token);
-
-        String invitationUrl = getSanitizedBaseUrl() + "/admin/accept-invitation?token=" + rawToken;
-        try {
-            emailService.sendAdminInvitationEmail(cleanEmail, invitationUrl, currentAdminUsername);
-            activityLogService.logActivity(currentAdminUsername, "Administrator Invited", "Sent administrator invitation email to: " + cleanEmail);
-        } catch (Exception e) {
-            log.warn("[Security Notice] Administrator invitation token created for '{}', but email dispatch failed: {}. Token remains valid for onboarding.", cleanEmail, e.getMessage());
-            activityLogService.logActivity(currentAdminUsername, "Administrator Invited (SMTP Failed)", "Created invitation token for " + cleanEmail + " (Email failed: " + e.getMessage() + ")");
-        }
-    }
-
-    @Transactional
-    public void acceptInvitation(String rawToken, String username, String password) {
-        if (!StringUtils.hasText(rawToken) || !StringUtils.hasText(username) || !StringUtils.hasText(password)) {
-            throw new IllegalArgumentException("All registration fields are required.");
-        }
-
-        String cleanUsername = username.trim();
-        String tokenHash = hashToken(rawToken);
-
-        AdminInvitationToken token = invitationTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired invitation token."));
-
-        if (token.isUsed() || token.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Invitation token has expired or already been used.");
-        }
-
-        if (adminUserRepository.existsByUsernameIgnoreCase(cleanUsername)) {
-            throw new IllegalArgumentException("Username '" + cleanUsername + "' is already taken. Please choose another.");
-        }
-
-        PasswordPolicyValidator.validate(password);
-
-        AdminUser newAdmin = AdminUser.builder()
-                .username(cleanUsername)
-                .email(token.getEmail())
-                .password(passwordEncoder.encode(password))
-                .enabled(true)
-                .build();
-
-        adminUserRepository.save(newAdmin);
-
-        token.setUsed(true);
-        invitationTokenRepository.save(token);
-
-        log.info("[Security Audit] Administrator account '{}' created successfully via invitation token.", cleanUsername);
-        activityLogService.logActivity(cleanUsername, "Account Registered", "Completed administrator onboarding via invitation");
-    }
-
     @Transactional
     public void requestPasswordReset(String email) {
         if (!StringUtils.hasText(email)) {
@@ -360,30 +263,6 @@ public class AdminAuthService {
 
         log.info("[Security Audit] Password reset successfully executed for administrator: {}", admin.getUsername());
         activityLogService.logActivity(admin.getUsername(), "Password Reset Complete", "Administrator password successfully reset via token link");
-    }
-
-    @Transactional
-    public void toggleAdminStatus(Long adminId, boolean enabled, String currentAdminUsername) {
-        AdminUser targetAdmin = adminUserRepository.findById(adminId)
-                .orElseThrow(() -> new NoSuchElementException("Administrator user not found."));
-
-        // Safeguard: Last active admin protection
-        if (!enabled) {
-            long activeCount = adminUserRepository.countByEnabledTrue();
-            if (activeCount <= 1 && targetAdmin.isEnabled()) {
-                throw new IllegalArgumentException("Cannot disable the last active administrator account. At least one active administrator must remain.");
-            }
-            if (targetAdmin.getUsername().equalsIgnoreCase(currentAdminUsername)) {
-                throw new IllegalArgumentException("You cannot disable your own active administrator account.");
-            }
-        }
-
-        targetAdmin.setEnabled(enabled);
-        adminUserRepository.save(targetAdmin);
-
-        String actionStr = enabled ? "ENABLED" : "DISABLED";
-        log.info("[Security Audit] Administrator '{}' status changed to {} by '{}'", targetAdmin.getUsername(), actionStr, currentAdminUsername);
-        activityLogService.logActivity(currentAdminUsername, "Admin Status Updated", "Changed admin user '" + targetAdmin.getUsername() + "' status to " + actionStr);
     }
 
     private String generateRandomToken() {

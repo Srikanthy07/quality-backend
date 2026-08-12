@@ -71,49 +71,6 @@ public class EmailService {
         log.info("Feedback email dispatched successfully to recipients: {}", Arrays.toString(recipients));
     }
 
-    public void sendAdminInvitationEmail(String toEmail, String invitationUrl, String invitedBy) throws MessagingException, UnsupportedEncodingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setFrom(fromEmail, fromName);
-        helper.setTo(toEmail.trim());
-        helper.setSubject("Administrator Invitation — IAST Quality Portal");
-
-        String htmlContent = """
-        <!DOCTYPE html>
-        <html lang="en">
-        <head><meta charset="UTF-8"/><title>Administrator Invitation</title></head>
-        <body style="margin:0;padding:0;background-color:#f4f7fb;font-family:Arial,sans-serif;">
-          <center style="width:100%%;background-color:#f4f7fb;">
-            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;margin:0 auto;background-color:#ffffff;">
-              <tr>
-                <td style="background-color:#0d2b45;padding:20px 30px;">
-                  <span style="font-size:18px;font-weight:bold;color:#ffffff;">IAST Quality Portal</span>
-                  <span style="font-size:12px;color:#00aabb;display:block;margin-top:2px;">Administrator Invitation</span>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:30px;color:#333333;font-size:14px;line-height:1.6;">
-                  <p style="margin-top:0;">Hello,</p>
-                  <p>You have been invited by <strong>%s</strong> to become an Administrator on the IAST Quality Portal.</p>
-                  <p>Please click the button below to complete your administrator account registration:</p>
-                  <p style="text-align:center;margin:30px 0;">
-                    <a href="%s" style="background-color:#00aabb;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:bold;display:inline-block;">Accept Administrator Invitation</a>
-                  </p>
-                  <p style="font-size:12px;color:#666666;">This invitation link is single-use and will expire in 48 hours. If you did not expect this invitation, please ignore this email.</p>
-                </td>
-              </tr>
-            </table>
-          </center>
-        </body>
-        </html>
-        """.formatted(escapeHtml(invitedBy), escapeHtml(invitationUrl));
-
-        helper.setText(htmlContent, true);
-        mailSender.send(message);
-        log.info("[Security Audit] Administrator invitation email sent to: {}", toEmail);
-    }
-
     public void sendPasswordResetEmail(String toEmail, String resetUrl, String username) throws MessagingException, UnsupportedEncodingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

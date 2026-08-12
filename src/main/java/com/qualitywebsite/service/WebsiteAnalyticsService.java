@@ -9,16 +9,16 @@ import com.qualitywebsite.repository.SearchLogRepository;
 import com.qualitywebsite.repository.WebsiteVisitorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 @Service
@@ -29,16 +29,35 @@ public class WebsiteAnalyticsService {
     private final WebsiteVisitorRepository websiteVisitorRepository;
     private final DocumentDownloadLogRepository documentDownloadLogRepository;
     private final SearchLogRepository searchLogRepository;
+    private final Environment environment;
+
+    public static final ZoneId ZONE_UTC = ZoneId.of("UTC");
+    public static final ZoneId ZONE_KOLKATA = ZoneId.of("Asia/Kolkata");
+
+    private boolean isTestEnvironment() {
+        String[] profiles = environment.getActiveProfiles();
+        for (String p : profiles) {
+            if ("test".equalsIgnoreCase(p)) {
+                return true;
+            }
+        }
+        return "false".equalsIgnoreCase(System.getProperty("analytics.enabled"));
+    }
 
     @Async
     @Transactional
     public void logVisit(String visitorId, String sessionId, String pageUrl, String pageTitle,
                          String browser, String os, String deviceType, String referrer,
                          boolean isNewSession, boolean isNewVisitorCookie) {
+        if (isTestEnvironment()) {
+            return;
+        }
+
         try {
             boolean isReturning = websiteVisitorRepository.countOtherSessions(visitorId, sessionId) > 0;
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime nowUtc = LocalDateTime.now(ZONE_UTC);
 
+            // Find existing visit for this exact page in the current session
             Optional<WebsiteVisitor> existingOpt = websiteVisitorRepository
                     .findFirstByVisitorIdAndSessionIdOrderByVisitTimeDesc(visitorId, sessionId);
 
@@ -46,29 +65,31 @@ public class WebsiteAnalyticsService {
                 WebsiteVisitor existing = existingOpt.get();
                 if (existing.getPageUrl().equalsIgnoreCase(pageUrl)) {
                     existing.setPageViews((existing.getPageViews() != null ? existing.getPageViews() : 1) + 1);
-                    existing.setLastActivityTime(now);
-                    existing.setSessionEnd(now);
+                    existing.setLastActivityTime(nowUtc);
+                    existing.setSessionEnd(nowUtc);
                     websiteVisitorRepository.save(existing);
                     return;
                 }
             }
+
+            LocalDateTime sessionStartUtc = existingOpt.map(v -> v.getSessionStart() != null ? v.getSessionStart() : nowUtc).orElse(nowUtc);
 
             WebsiteVisitor visit = WebsiteVisitor.builder()
                     .visitorId(visitorId)
                     .sessionId(sessionId)
                     .pageUrl(pageUrl)
                     .pageTitle(pageTitle)
-                    .visitTime(now)
-                    .lastActivityTime(now)
-                    .sessionStart(now)
-                    .sessionEnd(now)
+                    .visitTime(nowUtc)
+                    .lastActivityTime(nowUtc)
+                    .sessionStart(sessionStartUtc)
+                    .sessionEnd(nowUtc)
                     .pageViews(1)
                     .browser(browser)
                     .operatingSystem(os)
                     .deviceType(deviceType)
                     .referrer(referrer)
                     .isReturning(isReturning)
-                    .createdAt(now)
+                    .createdAt(nowUtc)
                     .build();
 
             websiteVisitorRepository.save(visit);
@@ -81,13 +102,17 @@ public class WebsiteAnalyticsService {
     @Async
     @Transactional
     public void logDownload(Long documentId, String documentName, String category, String visitorId) {
+        if (isTestEnvironment()) {
+            return;
+        }
+
         try {
             DocumentDownloadLog logEntry = DocumentDownloadLog.builder()
                     .documentId(documentId)
                     .documentName(documentName != null ? documentName : "Document #" + documentId)
                     .category(category != null ? category : "General")
-                    .visitorId(visitorId)
-                    .downloadTime(LocalDateTime.now())
+                    .visitorId(visitorId != null ? visitorId : "anonymous")
+                    .downloadTime(LocalDateTime.now(ZONE_UTC))
                     .build();
 
             documentDownloadLogRepository.save(logEntry);
@@ -99,13 +124,17 @@ public class WebsiteAnalyticsService {
     @Async
     @Transactional
     public void logSearch(String searchKeyword, int resultsCount, String visitorId) {
+        if (isTestEnvironment()) {
+            return;
+        }
         if (searchKeyword == null || searchKeyword.isBlank()) return;
+
         try {
             SearchLog searchEntry = SearchLog.builder()
-                    .visitorId(visitorId)
+                    .visitorId(visitorId != null ? visitorId : "anonymous")
                     .searchKeyword(searchKeyword.trim())
                     .resultsCount(resultsCount)
-                    .searchTime(LocalDateTime.now())
+                    .searchTime(LocalDateTime.now(ZONE_UTC))
                     .build();
 
             searchLogRepository.save(searchEntry);
@@ -115,72 +144,109 @@ public class WebsiteAnalyticsService {
     }
 
     /**
-     * Centralized Date Range Resolution
-     * Resolves filter string and custom dates into a single DateRange object.
+     * Safe Admin-Only Reset of All Analytics Data
+     */
+    @Transactional
+    public void resetAnalyticsData() {
+        websiteVisitorRepository.deleteAllInBatch();
+        documentDownloadLogRepository.deleteAllInBatch();
+        searchLogRepository.deleteAllInBatch();
+        log.info("[Security Audit] All website analytics data (visitors, downloads, searches) cleared by administrator.");
+    }
+
+    /**
+     * Centralized Date Range Resolution in Asia/Kolkata timezone.
+     * Calculates period start and end in Kolkata local time and returns UTC LocalDateTime bounds for DB queries.
      */
     public DateRange resolveDateRange(String filter, LocalDate startDate, LocalDate endDate) {
-        LocalDate end = LocalDate.now();
-        LocalDate start = end.minusDays(29);
+        LocalDate todayKolkata = LocalDate.now(ZONE_KOLKATA);
+        LocalDate startKolkata = todayKolkata.minusDays(29);
+        LocalDate endKolkata = todayKolkata;
         String label = "Last 30 Days";
 
         if ("today".equalsIgnoreCase(filter)) {
-            start = end;
+            startKolkata = todayKolkata;
+            endKolkata = todayKolkata;
             label = "Today";
         } else if ("yesterday".equalsIgnoreCase(filter)) {
-            start = end.minusDays(1);
-            end = start;
+            startKolkata = todayKolkata.minusDays(1);
+            endKolkata = startKolkata;
             label = "Yesterday";
         } else if ("7days".equalsIgnoreCase(filter) || "last_7_days".equalsIgnoreCase(filter)) {
-            start = end.minusDays(6);
+            startKolkata = todayKolkata.minusDays(6);
+            endKolkata = todayKolkata;
             label = "Last 7 Days";
         } else if ("30days".equalsIgnoreCase(filter) || "last_30_days".equalsIgnoreCase(filter)) {
-            start = end.minusDays(29);
+            startKolkata = todayKolkata.minusDays(29);
+            endKolkata = todayKolkata;
             label = "Last 30 Days";
-        } else if ("current_month".equalsIgnoreCase(filter)) {
-            start = end.withDayOfMonth(1);
+        } else if ("current_month".equalsIgnoreCase(filter) || "this_month".equalsIgnoreCase(filter)) {
+            startKolkata = todayKolkata.withDayOfMonth(1);
+            endKolkata = todayKolkata;
             label = "Current Month";
         } else if ("last_month".equalsIgnoreCase(filter)) {
-            LocalDate firstOfLastMonth = end.minusMonths(1).withDayOfMonth(1);
-            start = firstOfLastMonth;
-            end = firstOfLastMonth.plusMonths(1).minusDays(1);
+            LocalDate firstOfLastMonth = todayKolkata.minusMonths(1).withDayOfMonth(1);
+            startKolkata = firstOfLastMonth;
+            endKolkata = firstOfLastMonth.plusMonths(1).minusDays(1);
             label = "Last Month";
         } else if ("custom".equalsIgnoreCase(filter) && startDate != null && endDate != null) {
-            start = startDate;
-            end = endDate;
+            startKolkata = startDate;
+            endKolkata = endDate;
             label = startDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy")) + " – " + endDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         }
 
+        ZonedDateTime startZoned = startKolkata.atStartOfDay(ZONE_KOLKATA);
+        ZonedDateTime endZoned = endKolkata.atTime(LocalTime.MAX).atZone(ZONE_KOLKATA);
+
+        LocalDateTime startUtc = startZoned.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
+        LocalDateTime endUtc = endZoned.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
+
         return DateRange.builder()
-                .start(start.atStartOfDay())
-                .end(end.atTime(LocalTime.MAX))
+                .start(startUtc)
+                .end(endUtc)
                 .periodLabel(label)
                 .build();
+    }
+
+    private LocalDateTime toKolkata(LocalDateTime utcDateTime) {
+        if (utcDateTime == null) return null;
+        return utcDateTime.atZone(ZONE_UTC).withZoneSameInstant(ZONE_KOLKATA).toLocalDateTime();
     }
 
     @Transactional(readOnly = true)
     public AnalyticsSummaryDTO getSummary(String filter, LocalDate startDate, LocalDate endDate) {
         DateRange dateRange = resolveDateRange(filter, startDate, endDate);
-        LocalDateTime start = dateRange.getStart();
-        LocalDateTime end = dateRange.getEnd();
+        LocalDateTime startUtc = dateRange.getStart();
+        LocalDateTime endUtc = dateRange.getEnd();
 
-        // Filtered metrics
-        long visitors = websiteVisitorRepository.countUniqueVisitorsBetween(start, end);
-        long sessions = websiteVisitorRepository.countSessionsBetween(start, end);
-        long pageViews = websiteVisitorRepository.sumPageViewsBetween(start, end);
-        long downloads = documentDownloadLogRepository.countDownloadsBetween(start, end);
+        long visitors = websiteVisitorRepository.countUniqueVisitorsBetween(startUtc, endUtc);
+        long sessions = websiteVisitorRepository.countSessionsBetween(startUtc, endUtc);
+        long pageViews = websiteVisitorRepository.sumPageViewsBetween(startUtc, endUtc);
+        long downloads = documentDownloadLogRepository.countDownloadsBetween(startUtc, endUtc);
 
-        // Reference metrics
-        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-        LocalDateTime weekStart = LocalDate.now().minusDays(6).atStartOfDay();
-        LocalDateTime monthStart = LocalDate.now().minusDays(29).atStartOfDay();
-        LocalDateTime allTimeStart = LocalDateTime.of(2000, 1, 1, 0, 0);
+        // Date bounds in Kolkata
+        LocalDate todayKolkata = LocalDate.now(ZONE_KOLKATA);
+        ZonedDateTime todayStartK = todayKolkata.atStartOfDay(ZONE_KOLKATA);
+        ZonedDateTime todayEndK = todayKolkata.atTime(LocalTime.MAX).atZone(ZONE_KOLKATA);
 
-        long weeklyVisitors = websiteVisitorRepository.countUniqueVisitorsBetween(weekStart, todayEnd);
-        long monthlyVisitors = websiteVisitorRepository.countUniqueVisitorsBetween(monthStart, todayEnd);
+        // Current week in Kolkata (Monday to Sunday)
+        LocalDate weekStartKolkata = todayKolkata.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        ZonedDateTime weekStartK = weekStartKolkata.atStartOfDay(ZONE_KOLKATA);
+
+        // Current month in Kolkata
+        LocalDate monthStartKolkata = todayKolkata.withDayOfMonth(1);
+        ZonedDateTime monthStartK = monthStartKolkata.atStartOfDay(ZONE_KOLKATA);
+
+        LocalDateTime todayEndUtc = todayEndK.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
+        LocalDateTime weekStartUtc = weekStartK.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
+        LocalDateTime monthStartUtc = monthStartK.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
+
+        long weeklyVisitors = websiteVisitorRepository.countUniqueVisitorsBetween(weekStartUtc, todayEndUtc);
+        long monthlyVisitors = websiteVisitorRepository.countUniqueVisitorsBetween(monthStartUtc, todayEndUtc);
         long overallVisitors = websiteVisitorRepository.countOverallUniqueVisitors();
         long uniqueVisitors = websiteVisitorRepository.countOverallUniqueVisitors();
         long returningVisitors = websiteVisitorRepository.countReturningVisitors();
-        long totalDownloads = documentDownloadLogRepository.countDownloadsBetween(allTimeStart, todayEnd);
+        long totalDownloads = documentDownloadLogRepository.countDownloadsBetween(LocalDateTime.of(2000, 1, 1, 0, 0), todayEndUtc);
 
         return AnalyticsSummaryDTO.builder()
                 .visitors(visitors)
@@ -200,22 +266,23 @@ public class WebsiteAnalyticsService {
     @Transactional(readOnly = true)
     public List<DailyVisitorDTO> getDailyTrend(String filter, LocalDate startDate, LocalDate endDate) {
         DateRange dateRange = resolveDateRange(filter, startDate, endDate);
-        LocalDateTime start = dateRange.getStart();
-        LocalDateTime end = dateRange.getEnd();
+        LocalDateTime startUtc = dateRange.getStart();
+        LocalDateTime endUtc = dateRange.getEnd();
 
         Map<String, DailyVisitorDTO> map = new LinkedHashMap<>();
-        LocalDate cur = start.toLocalDate();
-        LocalDate last = end.toLocalDate();
+        LocalDate startK = startUtc.atZone(ZONE_UTC).withZoneSameInstant(ZONE_KOLKATA).toLocalDate();
+        LocalDate endK = endUtc.atZone(ZONE_UTC).withZoneSameInstant(ZONE_KOLKATA).toLocalDate();
+        LocalDate cur = startK;
 
-        while (!cur.isAfter(last)) {
+        while (!cur.isAfter(endK)) {
             String dateStr = cur.format(DateTimeFormatter.ISO_LOCAL_DATE);
             map.put(dateStr, new DailyVisitorDTO(dateStr, 0, 0, 0));
             cur = cur.plusDays(1);
         }
 
-        List<WebsiteVisitor> visits = websiteVisitorRepository.findRecentActivityBetween(start, end, PageRequest.of(0, 10000));
+        List<WebsiteVisitor> visits = websiteVisitorRepository.findRecentActivityBetween(startUtc, endUtc, PageRequest.of(0, 10000));
         for (WebsiteVisitor v : visits) {
-            String dateStr = v.getVisitTime().toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+            String dateStr = toKolkata(v.getVisitTime()).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
             DailyVisitorDTO dto = map.get(dateStr);
             if (dto != null) {
                 dto.setTotalVisits(dto.getTotalVisits() + 1);
@@ -224,8 +291,11 @@ public class WebsiteAnalyticsService {
         }
 
         for (String dStr : map.keySet()) {
-            LocalDate d = LocalDate.parse(dStr);
-            long u = websiteVisitorRepository.countUniqueVisitorsBetween(d.atStartOfDay(), d.atTime(LocalTime.MAX));
+            LocalDate dKolkata = LocalDate.parse(dStr);
+            ZonedDateTime dStartUtc = dKolkata.atStartOfDay(ZONE_KOLKATA).withZoneSameInstant(ZONE_UTC);
+            ZonedDateTime dEndUtc = dKolkata.atTime(LocalTime.MAX).atZone(ZONE_KOLKATA).withZoneSameInstant(ZONE_UTC);
+
+            long u = websiteVisitorRepository.countUniqueVisitorsBetween(dStartUtc.toLocalDateTime(), dEndUtc.toLocalDateTime());
             DailyVisitorDTO dto = map.get(dStr);
             if (dto != null) {
                 dto.setUniqueVisitors(u);
@@ -247,7 +317,7 @@ public class WebsiteAnalyticsService {
         for (Object[] r : rows) {
             String pageUrl = (String) r[0];
             long count = (Long) r[1];
-            LocalDateTime lastVisit = (LocalDateTime) r[2];
+            LocalDateTime lastVisitUtc = (LocalDateTime) r[2];
 
             double percentage = Math.round((count * 100.0 / totalVisits) * 10.0) / 10.0;
             String pageName = derivePageName(pageUrl);
@@ -257,7 +327,7 @@ public class WebsiteAnalyticsService {
                     .pageUrl(pageUrl)
                     .totalVisits(count)
                     .percentage(percentage)
-                    .lastVisit(lastVisit)
+                    .lastVisit(toKolkata(lastVisitUtc))
                     .build());
         }
         return result;
@@ -274,14 +344,14 @@ public class WebsiteAnalyticsService {
             String docName = (String) r[1];
             String category = (String) r[2];
             long count = (Long) r[3];
-            LocalDateTime latestDownload = (LocalDateTime) r[4];
+            LocalDateTime latestDownloadUtc = (LocalDateTime) r[4];
 
             result.add(DocumentDownloadStatDTO.builder()
                     .documentId(docId)
                     .documentName(docName)
                     .category(category)
                     .downloads(count)
-                    .latestDownload(latestDownload)
+                    .latestDownload(toKolkata(latestDownloadUtc))
                     .build());
         }
         return result;
@@ -311,13 +381,13 @@ public class WebsiteAnalyticsService {
             String keyword = (String) r[0];
             long count = (Long) r[1];
             double avgResults = r[2] != null ? Math.round(((Number) r[2]).doubleValue() * 10.0) / 10.0 : 0.0;
-            LocalDateTime latestSearch = (LocalDateTime) r[3];
+            LocalDateTime latestSearchUtc = (LocalDateTime) r[3];
 
             result.add(SearchStatDTO.builder()
                     .keyword(keyword)
                     .searchCount(count)
                     .avgResults(avgResults)
-                    .latestSearch(latestSearch)
+                    .latestSearch(toKolkata(latestSearchUtc))
                     .build());
         }
         return result;
@@ -331,7 +401,7 @@ public class WebsiteAnalyticsService {
         List<RecentActivityDTO> result = new ArrayList<>();
         for (WebsiteVisitor v : list) {
             result.add(RecentActivityDTO.builder()
-                    .time(v.getVisitTime())
+                    .time(toKolkata(v.getVisitTime()))
                     .pageUrl(v.getPageUrl())
                     .pageName(derivePageName(v.getPageUrl()))
                     .browser(v.getBrowser())
@@ -375,8 +445,10 @@ public class WebsiteAnalyticsService {
         StringBuilder csv = new StringBuilder();
         csv.append("\uFEFF"); // UTF-8 BOM
 
+        LocalDateTime nowKolkata = LocalDateTime.now(ZONE_KOLKATA);
+
         csv.append("WEBSITE ANALYTICS REPORT\n");
-        csv.append("Generated Date,").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
+        csv.append("Generated Date,").append(nowKolkata.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" (Asia/Kolkata)\n");
         csv.append("Generated By,Administrator\n");
         csv.append("Analytics Period,").append(dateRange.getPeriodLabel()).append("\n\n");
 
@@ -398,7 +470,7 @@ public class WebsiteAnalyticsService {
         csv.append("Total Downloads,").append(summary.getTotalDownloads()).append("\n\n");
 
         csv.append("TOP VISITED PAGES\n");
-        csv.append("Page Name,Page URL,Total Visits,Percentage,Last Visit\n");
+        csv.append("Page Name,Page URL,Total Visits,Percentage,Last Visit (IST)\n");
         for (PageStatDTO p : getTopPages(filter, startDate, endDate)) {
             csv.append(escapeCsv(p.getPageName())).append(",")
                .append(escapeCsv(p.getPageUrl())).append(",")
@@ -409,7 +481,7 @@ public class WebsiteAnalyticsService {
         csv.append("\n");
 
         csv.append("MOST DOWNLOADED DOCUMENTS\n");
-        csv.append("Document Name,Category,Downloads,Latest Download\n");
+        csv.append("Document Name,Category,Downloads,Latest Download (IST)\n");
         for (DocumentDownloadStatDTO d : getTopDownloads(filter, startDate, endDate)) {
             csv.append(escapeCsv(d.getDocumentName())).append(",")
                .append(escapeCsv(d.getCategory())).append(",")

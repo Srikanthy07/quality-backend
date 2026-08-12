@@ -47,32 +47,4 @@ public class PublicAdminAuthController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
-
-    @PostMapping("/accept-invitation")
-    public ResponseEntity<Map<String, String>> acceptInvitation(@RequestBody Map<String, String> payload) {
-        String token = payload.get("token");
-        String username = payload.get("username");
-        String password = payload.get("password");
-        String confirmPassword = payload.get("confirmPassword");
-
-        if (token == null || token.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invitation token is missing."));
-        }
-        if (username == null || username.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Username is required."));
-        }
-        if (password == null || password.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Password is required."));
-        }
-        if (confirmPassword != null && !password.equals(confirmPassword)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Password and confirm password do not match."));
-        }
-
-        try {
-            adminAuthService.acceptInvitation(token, username, password);
-            return ResponseEntity.ok(Map.of("message", "Administrator account successfully registered. You may now log in."));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
 }

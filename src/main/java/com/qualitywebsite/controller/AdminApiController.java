@@ -20,9 +20,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminApiController {
 
     private final DmsDocumentService dmsDocumentService;
@@ -31,6 +34,7 @@ public class AdminApiController {
     private final SettingsService settingsService;
     private final ActivityLogService activityLogService;
     private final AdminAuthService adminAuthService;
+    private final WebsiteAnalyticsService websiteAnalyticsService;
 
     // --- Dashboard ---
     @GetMapping("/dashboard")
@@ -406,39 +410,16 @@ public class AdminApiController {
         }
     }
 
-    // --- User Management ---
-    @GetMapping("/users")
-    public ResponseEntity<List<Map<String, Object>>> getUsers() {
-        return ResponseEntity.ok(adminAuthService.getAllAdmins());
-    }
-
-    @PostMapping("/users/invite")
-    public ResponseEntity<?> inviteUser(@RequestBody Map<String, String> payload, Authentication auth) {
-        String email = payload.get("email");
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email address is required"));
-        }
+    @PostMapping("/analytics/reset")
+    public ResponseEntity<Map<String, String>> resetAnalytics(Authentication auth) {
         try {
-            adminAuthService.inviteAdmin(email, getUsername(auth));
-            return ResponseEntity.ok(Map.of("message", "Invitation sent successfully to " + email.trim()));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @RequestMapping(value = "/users/{id}/status", method = {RequestMethod.PATCH, RequestMethod.POST})
-    public ResponseEntity<?> toggleUserStatus(
-            @PathVariable Long id, @RequestBody Map<String, Boolean> payload, Authentication auth) {
-        Boolean enabled = payload.get("enabled");
-        if (enabled == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Status 'enabled' boolean is required"));
-        }
-        try {
-            adminAuthService.toggleAdminStatus(id, enabled, getUsername(auth));
-            String actionStr = enabled ? "enabled" : "disabled";
-            return ResponseEntity.ok(Map.of("message", "Administrator account successfully " + actionStr));
-        } catch (IllegalArgumentException | java.util.NoSuchElementException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            websiteAnalyticsService.resetAnalyticsData();
+            activityLogService.logActivity(getUsername(auth), "Analytics Reset", "Cleared all website visitor, search, and download analytics data");
+            return ResponseEntity.ok(Map.of("message", "Website analytics data cleared successfully."));
+        } catch (Exception e) {
+            log.error("Failed to reset analytics data", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to clear analytics data: " + e.getMessage()));
         }
     }
 

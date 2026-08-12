@@ -31,9 +31,6 @@ class AdminPasswordResetTest {
     private com.qualitywebsite.repository.AdminPasswordResetTokenRepository passwordResetTokenRepository;
 
     @Autowired
-    private com.qualitywebsite.repository.AdminInvitationTokenRepository invitationTokenRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -49,7 +46,7 @@ class AdminPasswordResetTest {
 
     @BeforeEach
     void setUp() {
-        adminAuthService = new AdminAuthService(adminUserRepository, passwordResetTokenRepository, invitationTokenRepository, passwordEncoder, activityLogService, rateLimiter, emailService);
+        adminAuthService = new AdminAuthService(adminUserRepository, passwordResetTokenRepository, passwordEncoder, activityLogService, rateLimiter, emailService);
     }
 
     @org.junit.jupiter.api.AfterEach

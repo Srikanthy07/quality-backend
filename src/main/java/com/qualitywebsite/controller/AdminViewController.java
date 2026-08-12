@@ -63,16 +63,6 @@ public class AdminViewController {
         return "admin/reset-password";
     }
 
-    @GetMapping("/accept-invitation")
-    public String acceptInvitationPage() {
-        return "admin/accept-invitation";
-    }
-
-    @GetMapping("/users")
-    public String usersPage() {
-        return "admin/users";
-    }
-
     @GetMapping("/website-analytics")
     public String websiteAnalyticsPage() {
         return "admin/website-analytics";
