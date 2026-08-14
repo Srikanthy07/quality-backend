@@ -18,9 +18,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-    "spring.datasource.url=${TEST_DB_URL:${DB_URL:jdbc:mysql://localhost:3306/quality_website?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true}}",
-    "spring.datasource.username=${TEST_DB_USERNAME:${DB_USERNAME:root}}",
-    "spring.datasource.password=${TEST_DB_PASSWORD:${DB_PASSWORD:1234}}"
+    "spring.datasource.url=jdbc:h2:mem:admin_reset_testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class AdminPasswordResetTest {
 

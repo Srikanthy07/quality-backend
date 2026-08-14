@@ -25,9 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-    "spring.datasource.url=${TEST_DB_URL:${DB_URL:jdbc:mysql://localhost:3306/quality_website?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true}}",
-    "spring.datasource.username=${TEST_DB_USERNAME:${DB_USERNAME:root}}",
-    "spring.datasource.password=${TEST_DB_PASSWORD:${DB_PASSWORD:1234}}"
+    "spring.datasource.url=jdbc:h2:mem:admin_session_testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class AdminSessionTimeoutIntegrationTest {
 
@@ -210,7 +210,7 @@ class AdminSessionTimeoutIntegrationTest {
         // Session 1 must be expired
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session1))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/login?expired=true"));
+                .andExpect(redirectedUrl("/admin/login?evicted=true"));
 
         // Sessions 2 and 3 must remain active
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session2))

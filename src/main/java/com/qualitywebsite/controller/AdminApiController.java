@@ -34,7 +34,6 @@ public class AdminApiController {
     private final SettingsService settingsService;
     private final ActivityLogService activityLogService;
     private final AdminAuthService adminAuthService;
-    private final WebsiteAnalyticsService websiteAnalyticsService;
 
     // --- Dashboard ---
     @GetMapping("/dashboard")
@@ -407,19 +406,6 @@ public class AdminApiController {
             }
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/analytics/reset")
-    public ResponseEntity<Map<String, String>> resetAnalytics(Authentication auth) {
-        try {
-            websiteAnalyticsService.resetAnalyticsData();
-            activityLogService.logActivity(getUsername(auth), "Analytics Reset", "Cleared all website visitor, search, and download analytics data");
-            return ResponseEntity.ok(Map.of("message", "Website analytics data cleared successfully."));
-        } catch (Exception e) {
-            log.error("Failed to reset analytics data", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to clear analytics data: " + e.getMessage()));
         }
     }
 

@@ -17,8 +17,8 @@ spring:
       pem:
         my-server-bundle:
           keystore:
-            certificate: "#{'${SSL_CERTIFICATE:}'.replace('\\n', T(java.lang.System).lineSeparator())}"
-            private-key: "#{'${SSL_CERTIFICATE_PRIVATE_KEY:}'.replace('\\n', T(java.lang.System).lineSeparator())}"
+            certificate: ${SSL_CERTIFICATE:}
+            private-key: ${SSL_CERTIFICATE_PRIVATE_KEY:}
 
   devtools:
     restart:

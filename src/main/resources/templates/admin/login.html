@@ -224,7 +224,12 @@
 
       <div th:if="${param.expired}" class="alert alert-danger">
         <i class="fas fa-exclamation-circle"></i>
-        <span>Your session has expired or was logged in from another location. Please log in again.</span>
+        <span>Your session has expired. Please log in again.</span>
+      </div>
+
+      <div th:if="${param.evicted}" class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>Your session has expired because your account was logged in from another location. Please log in again.</span>
       </div>
 
       <div th:if="${param.logout}" class="alert alert-success">

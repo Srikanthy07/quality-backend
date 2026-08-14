@@ -144,17 +144,6 @@ public class WebsiteAnalyticsService {
     }
 
     /**
-     * Safe Admin-Only Reset of All Analytics Data
-     */
-    @Transactional
-    public void resetAnalyticsData() {
-        websiteVisitorRepository.deleteAllInBatch();
-        documentDownloadLogRepository.deleteAllInBatch();
-        searchLogRepository.deleteAllInBatch();
-        log.info("[Security Audit] All website analytics data (visitors, downloads, searches) cleared by administrator.");
-    }
-
-    /**
      * Centralized Date Range Resolution in Asia/Kolkata timezone.
      * Calculates period start and end in Kolkata local time and returns UTC LocalDateTime bounds for DB queries.
      */
@@ -189,6 +178,10 @@ public class WebsiteAnalyticsService {
             startKolkata = firstOfLastMonth;
             endKolkata = firstOfLastMonth.plusMonths(1).minusDays(1);
             label = "Last Month";
+        } else if ("overall".equalsIgnoreCase(filter) || "all_time".equalsIgnoreCase(filter)) {
+            startKolkata = LocalDate.of(2000, 1, 1);
+            endKolkata = todayKolkata;
+            label = "Overall / All Time";
         } else if ("custom".equalsIgnoreCase(filter) && startDate != null && endDate != null) {
             startKolkata = startDate;
             endKolkata = endDate;

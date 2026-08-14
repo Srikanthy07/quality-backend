@@ -2,7 +2,6 @@ package com.qualitywebsite.analytics;
 
 import com.qualitywebsite.dto.AnalyticsSummaryDTO;
 import com.qualitywebsite.entity.AdminUser;
-import com.qualitywebsite.entity.DocumentMaster;
 import com.qualitywebsite.entity.WebsiteVisitor;
 import com.qualitywebsite.repository.AdminUserRepository;
 import com.qualitywebsite.repository.DocumentDownloadLogRepository;
@@ -10,18 +9,15 @@ import com.qualitywebsite.repository.DocumentMasterRepository;
 import com.qualitywebsite.repository.SearchLogRepository;
 import com.qualitywebsite.repository.WebsiteVisitorRepository;
 import com.qualitywebsite.service.WebsiteAnalyticsService;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,9 +33,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-    "spring.datasource.url=${TEST_DB_URL:${DB_URL:jdbc:mysql://localhost:3306/quality_website?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true}}",
-    "spring.datasource.username=${TEST_DB_USERNAME:${DB_USERNAME:root}}",
-    "spring.datasource.password=${TEST_DB_PASSWORD:${DB_PASSWORD:1234}}"
+    "analytics.enabled=true",
+    "spring.datasource.url=jdbc:h2:mem:analytics_testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class WebsiteAnalyticsServiceTest {
 
@@ -62,7 +59,7 @@ class WebsiteAnalyticsServiceTest {
     private AdminUserRepository adminUserRepository;
 
     @Autowired
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private com.qualitywebsite.security.LoginRateLimiterService loginRateLimiterService;
@@ -72,7 +69,6 @@ class WebsiteAnalyticsServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Explicitly enable analytics logging during this unit test suite
         System.setProperty("analytics.enabled", "true");
         loginRateLimiterService.loginSucceeded("admin");
 
@@ -95,11 +91,8 @@ class WebsiteAnalyticsServiceTest {
         String visitorId = "vid_" + UUID.randomUUID();
         String sessionId = "sid_" + UUID.randomUUID();
 
-        // 1. Visit Home Page
         websiteAnalyticsService.logVisit(visitorId, sessionId, "/index.html", "Home Page", "Chrome", "Windows", "Desktop", null, true, true);
-        // 2. Visit Documents Page
         websiteAnalyticsService.logVisit(visitorId, sessionId, "/master-list.html", "Master List", "Chrome", "Windows", "Desktop", null, false, false);
-        // 3. Visit Lessons Learned Page
         websiteAnalyticsService.logVisit(visitorId, sessionId, "/lessons-learned.html", "Lessons Learned", "Chrome", "Windows", "Desktop", null, false, false);
 
         AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
@@ -128,10 +121,7 @@ class WebsiteAnalyticsServiceTest {
         String session1 = "sid_1_" + UUID.randomUUID();
         String session2 = "sid_2_" + UUID.randomUUID();
 
-        // Session 1 (Initial visit)
         websiteAnalyticsService.logVisit(visitorId, session1, "/", "Home", "Chrome", "Windows", "Desktop", null, true, true);
-
-        // Session 2 (Return after 30 min session timeout)
         websiteAnalyticsService.logVisit(visitorId, session2, "/", "Home", "Chrome", "Windows", "Desktop", null, true, false);
 
         AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
@@ -181,137 +171,123 @@ class WebsiteAnalyticsServiceTest {
 
     @Test
     void test7_InternalStaticRequestsAreNotCountedAsPageViews() throws Exception {
-        // Perform GET request to a static CSS resource or API
-        mockMvc.perform(get("/css/style.css"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/css/style.css").secure(true)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/public/documents").secure(true)).andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/public/documents"))
-                .andExpect(status().isOk());
-
-        // Verify neither static CSS nor public JSON API calls created WebsiteVisitor entries
         long count = websiteVisitorRepository.count();
         assertEquals(0, count, "Static assets and API requests must not create page view records");
     }
 
     @Test
-    void test8_TodayCalculationUsesAsiaKolkataCorrectly() {
-        ZonedDateTime nowKolkata = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-        String visitorId = "vid_today_" + UUID.randomUUID();
-        String sessionId = "sid_today_" + UUID.randomUUID();
+    void test8_VisitorCreatedOnDay1RemainsAvailableOnDay2AndDay3() {
+        ZoneId zoneKolkata = ZoneId.of("Asia/Kolkata");
+        ZoneId zoneUtc = ZoneId.of("UTC");
 
-        websiteAnalyticsService.logVisit(visitorId, sessionId, "/", "Home", "Chrome", "Windows", "Desktop", null, true, true);
+        LocalDate todayKolkata = LocalDate.now(zoneKolkata);
+        LocalDate day1Kolkata = todayKolkata.minusDays(2);
+        LocalDate day2Kolkata = todayKolkata.minusDays(1);
 
-        AnalyticsSummaryDTO summaryToday = websiteAnalyticsService.getSummary("today", null, null);
-        assertEquals(1, summaryToday.getVisitors());
+        LocalDateTime day1Utc = day1Kolkata.atTime(10, 0).atZone(zoneKolkata).withZoneSameInstant(zoneUtc).toLocalDateTime();
+        LocalDateTime day2Utc = day2Kolkata.atTime(14, 0).atZone(zoneKolkata).withZoneSameInstant(zoneUtc).toLocalDateTime();
+
+        WebsiteVisitor v1 = WebsiteVisitor.builder()
+                .visitorId("visitor_day1")
+                .sessionId("session_day1")
+                .pageUrl("/")
+                .pageTitle("Home")
+                .visitTime(day1Utc)
+                .lastActivityTime(day1Utc)
+                .sessionStart(day1Utc)
+                .sessionEnd(day1Utc)
+                .pageViews(2)
+                .browser("Chrome")
+                .operatingSystem("Windows")
+                .deviceType("Desktop")
+                .isReturning(false)
+                .createdAt(day1Utc)
+                .build();
+        websiteVisitorRepository.save(v1);
+
+        WebsiteVisitor v2 = WebsiteVisitor.builder()
+                .visitorId("visitor_day2")
+                .sessionId("session_day2")
+                .pageUrl("/master-list.html")
+                .pageTitle("Master List")
+                .visitTime(day2Utc)
+                .lastActivityTime(day2Utc)
+                .sessionStart(day2Utc)
+                .sessionEnd(day2Utc)
+                .pageViews(1)
+                .browser("Firefox")
+                .operatingSystem("Linux")
+                .deviceType("Desktop")
+                .isReturning(false)
+                .createdAt(day2Utc)
+                .build();
+        websiteVisitorRepository.save(v2);
+
+        // Verify Yesterday filter returns Day 2 records
+        AnalyticsSummaryDTO yesterdaySummary = websiteAnalyticsService.getSummary("yesterday", null, null);
+        assertEquals(1, yesterdaySummary.getVisitors(), "Yesterday should return 1 visitor");
+
+        // Verify Last 7 Days filter includes both Day 1 and Day 2 records
+        AnalyticsSummaryDTO last7DaysSummary = websiteAnalyticsService.getSummary("7days", null, null);
+        assertEquals(2, last7DaysSummary.getVisitors(), "Last 7 Days should include Day 1 and Day 2 visitors");
+
+        // Verify Overall / All Time includes all historical records
+        AnalyticsSummaryDTO overallSummary = websiteAnalyticsService.getSummary("overall", null, null);
+        assertEquals(2, overallSummary.getOverallVisitors(), "Overall visitors should be 2");
     }
 
     @Test
-    void test9_ThisWeekCalculationIsCorrect() {
-        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("7days", null, null);
-        assertNotNull(summary);
-        assertEquals("Last 7 Days", summary.getPeriodLabel());
+    void test9_YesterdayFilterReturnsYesterdayRecordsInAsiaKolkataTimezone() {
+        ZoneId zoneKolkata = ZoneId.of("Asia/Kolkata");
+        ZoneId zoneUtc = ZoneId.of("UTC");
+
+        LocalDate todayKolkata = LocalDate.now(zoneKolkata);
+        LocalDate yesterdayKolkata = todayKolkata.minusDays(1);
+
+        LocalDateTime yesterdayNoonUtc = yesterdayKolkata.atTime(12, 0).atZone(zoneKolkata).withZoneSameInstant(zoneUtc).toLocalDateTime();
+
+        WebsiteVisitor v = WebsiteVisitor.builder()
+                .visitorId("visitor_yesterday")
+                .sessionId("session_yesterday")
+                .pageUrl("/index.html")
+                .pageTitle("Home Page")
+                .visitTime(yesterdayNoonUtc)
+                .lastActivityTime(yesterdayNoonUtc)
+                .sessionStart(yesterdayNoonUtc)
+                .sessionEnd(yesterdayNoonUtc)
+                .pageViews(3)
+                .browser("Edge")
+                .operatingSystem("Windows")
+                .deviceType("Desktop")
+                .isReturning(false)
+                .createdAt(yesterdayNoonUtc)
+                .build();
+        websiteVisitorRepository.save(v);
+
+        AnalyticsSummaryDTO yesterdaySummary = websiteAnalyticsService.getSummary("yesterday", null, null);
+        assertEquals(1, yesterdaySummary.getVisitors(), "Yesterday summary should return 1 visitor");
+        assertEquals(3, yesterdaySummary.getPageViews(), "Yesterday summary should return 3 page views");
     }
 
     @Test
-    void test10_ThisMonthCalculationIsCorrect() {
-        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("current_month", null, null);
-        assertNotNull(summary);
-        assertEquals("Current Month", summary.getPeriodLabel());
-    }
-
-    @Test
-    void test11_Last30DaysCalculationIsCorrect() {
-        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
-        assertNotNull(summary);
-        assertEquals("Last 30 Days", summary.getPeriodLabel());
-    }
-
-    @Test
-    void test12_OverallStatisticsIncludeAllHistoricalRecords() {
-        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
-        assertNotNull(summary);
-        assertTrue(summary.getOverallVisitors() >= 0);
-    }
-
-    @Test
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void test13_AnalyticsResetDeletesAnalyticsDataOnly() {
-        String visitorId = "vid_" + UUID.randomUUID();
-        String sessionId = "sid_" + UUID.randomUUID();
-
-        websiteAnalyticsService.logVisit(visitorId, sessionId, "/", "Home", "Chrome", "Windows", "Desktop", null, true, true);
-        websiteAnalyticsService.logDownload(10L, "Doc.pdf", "Category", visitorId);
-        websiteAnalyticsService.logSearch("quality", 5, visitorId);
-
-        assertTrue(websiteVisitorRepository.count() > 0);
-        assertTrue(documentDownloadLogRepository.count() > 0);
-        assertTrue(searchLogRepository.count() > 0);
-
-        // Execute Reset
-        websiteAnalyticsService.resetAnalyticsData();
-
-        assertEquals(0, websiteVisitorRepository.count());
-        assertEquals(0, documentDownloadLogRepository.count());
-        assertEquals(0, searchLogRepository.count());
-
-        // Verify DocumentMaster or other domain entities were NOT affected
-        assertNotNull(documentMasterRepository.findAll());
-    }
-
-    private MockHttpSession performLogin(String username, String password) throws Exception {
-        MvcResult result = mockMvc.perform(post("/admin/login")
-                .secure(true)
-                .with(csrf())
-                .param("username", username)
-                .param("password", password))
-                .andExpect(status().is3xxRedirection())
-                .andReturn();
-
-        return (MockHttpSession) result.getRequest().getSession();
-    }
-
-    @Test
-    void test14_AnalyticsResetRequiresAuthentication_SucceedsForAdmin() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-
+    void test10_ResetEndpointNoLongerExists_Returns404NotFound() throws Exception {
         mockMvc.perform(post("/api/admin/analytics/reset")
                 .secure(true)
-                .session(session)
                 .with(csrf())
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void test11_ClearAnalyticsDataButtonIsRemovedFromHtmlTemplate() throws Exception {
+        mockMvc.perform(get("/admin/website-analytics")
+                .secure(true)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Website analytics data cleared successfully."));
-    }
-
-    @Test
-    void test15_PublicUsersCannotCallAnalyticsResetEndpoint() throws Exception {
-        mockMvc.perform(post("/api/admin/analytics/reset")
-                .secure(true)
-                .with(csrf()))
-                .andExpect(status().is3xxRedirection());
-    }
-
-    @Test
-    void test16_CsrfProtectionRemainsActiveForResetOperation() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-
-        MvcResult res = mockMvc.perform(post("/api/admin/analytics/reset")
-                .secure(true)
-                .session(session))
-                .andReturn();
-
-        assertNotEquals(200, res.getResponse().getStatus(), "Request without CSRF token must not return 200 OK");
-    }
-
-    @Test
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void test17_AfterResetDashboardCountersShowZero() throws Exception {
-        websiteAnalyticsService.resetAnalyticsData();
-
-        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
-        assertEquals(0, summary.getVisitors());
-        assertEquals(0, summary.getSessions());
-        assertEquals(0, summary.getPageViews());
-        assertEquals(0, summary.getDownloads());
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Clear Analytics Data"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("clearAnalyticsModal"))));
     }
 }

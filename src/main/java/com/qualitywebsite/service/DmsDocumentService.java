@@ -267,21 +267,6 @@ public class DmsDocumentService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public ResponseEntity<byte[]> streamVersion(Long versionId) {
-        DocumentVersion version = documentVersionRepository.findById(versionId)
-                .orElseThrow(() -> new IllegalArgumentException("Document version not found: " + versionId));
-
-        return buildStreamResponse(version);
-    }
-
-    @Transactional(readOnly = true)
-    public ResponseEntity<byte[]> streamLatest(Long masterId) {
-        DocumentVersion latest = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId)
-                .orElseThrow(() -> new IllegalArgumentException("No active version found for document: " + masterId));
-
-        return buildStreamResponse(latest);
-    }
 
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> streamPublicVersion(Long versionId) {

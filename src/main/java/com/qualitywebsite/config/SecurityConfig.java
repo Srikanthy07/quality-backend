@@ -160,7 +160,7 @@ public class SecurityConfig {
                 .maximumSessions(2)
                 .maxSessionsPreventsLogin(false)
                 .sessionRegistry(sessionRegistry())
-                .expiredUrl("/admin/login?expired=true")
+                .expiredUrl("/admin/login?evicted=true")
             )
 
             .authorizeHttpRequests(auth -> auth
