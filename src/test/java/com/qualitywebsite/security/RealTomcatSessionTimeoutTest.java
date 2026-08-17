@@ -105,10 +105,14 @@ class RealTomcatSessionTimeoutTest {
 
         if (isSslEnabled()) {
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[]{ new X509TrustManager() {
-                public X509Certificate[] getAcceptedIssuers() { return null; }
+            sslContext.init(null, new javax.net.ssl.TrustManager[]{ new javax.net.ssl.X509ExtendedTrustManager() {
+                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
                 public void checkClientTrusted(X509Certificate[] certs, String authType) {}
                 public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                public void checkClientTrusted(X509Certificate[] certs, String authType, java.net.Socket socket) {}
+                public void checkServerTrusted(X509Certificate[] certs, String authType, java.net.Socket socket) {}
+                public void checkClientTrusted(X509Certificate[] certs, String authType, javax.net.ssl.SSLEngine engine) {}
+                public void checkServerTrusted(X509Certificate[] certs, String authType, javax.net.ssl.SSLEngine engine) {}
             }}, new java.security.SecureRandom());
             builder.sslContext(sslContext);
 
