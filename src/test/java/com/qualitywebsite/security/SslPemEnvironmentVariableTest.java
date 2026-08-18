@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
     "SSL_ENABLED=true",
+    "http.port=0",
     "spring.datasource.url=jdbc:h2:mem:ssl_pem_testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
     "spring.datasource.driver-class-name=org.h2.Driver",
     "spring.jpa.hibernate.ddl-auto=create-drop"

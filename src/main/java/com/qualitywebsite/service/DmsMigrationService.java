@@ -56,8 +56,16 @@ public class DmsMigrationService {
                 String code = legacy.getId() != null ? legacy.getId() : (legacy.getProcess() + "-" + legacy.getFileName());
                 String targetFileName = legacy.getFileName() != null ? legacy.getFileName() : (legacy.getDocumentName() + "." + getExtension(legacy.getFileName()).toLowerCase());
 
-                if (documentMasterRepository.findByDocumentCode(code).isPresent() 
-                        || documentVersionRepository.findFirstByFileNameIgnoreCase(targetFileName).isPresent()) {
+                Optional<DocumentMaster> existingMasterOpt = documentMasterRepository.findByDocumentCode(code);
+                if (existingMasterOpt.isPresent() || documentVersionRepository.findFirstByFileNameIgnoreCase(targetFileName).isPresent()) {
+                    if (existingMasterOpt.isPresent()) {
+                        DocumentMaster master = existingMasterOpt.get();
+                        if ((master.getDescription() == null || master.getDescription().trim().isEmpty())
+                                && legacy.getDescription() != null && !legacy.getDescription().trim().isEmpty()) {
+                            master.setDescription(legacy.getDescription().trim());
+                            documentMasterRepository.save(master);
+                        }
+                    }
                     continue; // Already migrated/seeded
                 }
 
@@ -82,6 +90,7 @@ public class DmsMigrationService {
                         .processGroup(legacy.getProcessGroup() != null ? legacy.getProcessGroup() : "General")
                         .category(category)
                         .documentName(docName)
+                        .description(legacy.getDescription())
                         .currentVersion(legacy.getVersion() != null ? legacy.getVersion() : "1.0")
                         .status("APPROVED")
                         .createdBy(legacy.getCreatedBy() != null ? legacy.getCreatedBy() : "system")

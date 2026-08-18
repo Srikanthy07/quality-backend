@@ -178,6 +178,10 @@
               <label for="edit-process-group">Process Group</label>
               <input type="text" id="edit-process-group" class="form-control"/>
             </div>
+            <div class="form-group form-group-full" id="edit-description-group" style="display:none;">
+              <label for="edit-description">Description</label>
+              <textarea id="edit-description" class="form-control" rows="3" placeholder="Document description..."></textarea>
+            </div>
           </div>
         </form>
       </div>
@@ -244,6 +248,31 @@
       </div>
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('history-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Archive Confirmation Modal -->
+  <div class="modal-overlay" id="archive-modal">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Archive Document</h3>
+        <button class="modal-close" onclick="closeArchiveModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:28px 24px;">
+        <div style="width:56px; height:56px; border-radius:50%; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px auto;">
+          <i class="fas fa-archive"></i>
+        </div>
+        <h4 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:8px;" id="archive-modal-prompt">
+          Are you sure you want to archive this document?
+        </h4>
+        <p style="font-size:0.9rem; color:#64748b; margin:0; line-height:1.5;">
+          The document will be moved to ARCHIVED status and its version history will be preserved.
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:12px;">
+        <button type="button" class="btn-outline" id="archive-modal-cancel-btn" onclick="closeArchiveModal()">Cancel</button>
+        <button type="button" class="btn-teal" id="archive-modal-confirm-btn" onclick="confirmArchiveDoc()" style="background:#dc2626; border-color:#dc2626; color:#fff;">Archive</button>
       </div>
     </div>
   </div>
@@ -348,6 +377,20 @@
       document.getElementById('edit-category').value        = doc.category || 'ASPICE PRM';
       document.getElementById('edit-process').value         = doc.processId  || 'GLOBAL';
       document.getElementById('edit-process-group').value   = doc.processGroup || '';
+
+      const hasDescription = doc && doc.description != null && String(doc.description).trim().length > 0;
+      const descGroup = document.getElementById('edit-description-group');
+      const descInput = document.getElementById('edit-description');
+      if (descGroup && descInput) {
+        if (hasDescription) {
+          descGroup.style.display = 'block';
+          descInput.value = doc.description;
+        } else {
+          descGroup.style.display = 'none';
+          descInput.value = '';
+        }
+      }
+
       document.getElementById('edit-modal').classList.add('active');
     }
 
@@ -364,6 +407,11 @@
         processGroup:  document.getElementById('edit-process-group').value
       };
 
+      const descGroup = document.getElementById('edit-description-group');
+      if (descGroup && descGroup.style.display !== 'none') {
+        bodyData.description = document.getElementById('edit-description').value;
+      }
+
       fetch(`/api/admin/dms/documents/${id}`, {
         method: 'PUT',
         headers: {
@@ -375,18 +423,19 @@
       .then(res => {
         if (res.ok) {
           closeModal('edit-modal');
+          showSuccessMsg('Document details updated successfully.');
           loadDocuments();
         } else if (res.status === 409) {
           closeModal('edit-modal');
           showConflictToast(
             'This document was modified by another administrator. The form has been closed — please review the latest data and try again.'
           );
-          loadDocuments(); // Auto-reload so the admin sees current state
+          loadDocuments();
         } else {
-          alert('Failed to update document details.');
+          showErrorToast('Failed to update document details.');
         }
       })
-      .catch(() => alert('Network error. Please try again.'));
+      .catch(() => showErrorToast('Network error. Please try again.'));
     }
 
     function openVersionModal(id) {
@@ -473,48 +522,110 @@
         });
     }
 
+    let documentIdToArchive = null;
+    let isArchiving = false;
+
     function deleteDoc(id, name) {
-      if (confirm(`Are you sure you want to archive/delete "${name}"? This action moves the document to ARCHIVED.`)) {
-        fetch(`/api/admin/dms/documents/${id}`, {
-          method: 'DELETE',
-          headers: {
-            [csrfHeader]: csrfToken
-          }
-        })
-        .then(res => {
-          if (res.ok) {
-            loadDocuments();
-          } else {
-            alert('Failed to delete document.');
-          }
-        });
+      openArchiveModal(id, name);
+    }
+
+    function openArchiveModal(id, name) {
+      documentIdToArchive = id;
+      isArchiving = false;
+      const promptEl = document.getElementById('archive-modal-prompt');
+      if (promptEl) {
+        promptEl.textContent = "Are you sure you want to archive this document?";
       }
+      const confirmBtn = document.getElementById('archive-modal-confirm-btn');
+      const cancelBtn  = document.getElementById('archive-modal-cancel-btn');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Archive';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+      }
+      document.getElementById('archive-modal').classList.add('active');
+    }
+
+    function closeArchiveModal() {
+      if (isArchiving) return;
+      document.getElementById('archive-modal').classList.remove('active');
+      documentIdToArchive = null;
+    }
+
+    function confirmArchiveDoc() {
+      if (!documentIdToArchive || isArchiving) return;
+      isArchiving = true;
+
+      const confirmBtn = document.getElementById('archive-modal-confirm-btn');
+      const cancelBtn  = document.getElementById('archive-modal-cancel-btn');
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Archiving...';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+      }
+
+      fetch(`/api/admin/dms/documents/${documentIdToArchive}`, {
+        method: 'DELETE',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      })
+      .then(async res => {
+        isArchiving = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (cancelBtn)  cancelBtn.disabled = false;
+
+        if (res.ok) {
+          closeArchiveModal();
+          showSuccessMsg('Document successfully archived.');
+          loadDocuments();
+        } else if (res.status === 409) {
+          closeArchiveModal();
+          showConflictToast(
+            'This document was modified by another administrator while archiving. Please refresh and try again.'
+          );
+          loadDocuments();
+        } else {
+          closeArchiveModal();
+          showErrorToast('Failed to archive document.');
+        }
+      })
+      .catch(err => {
+        isArchiving = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (cancelBtn)  cancelBtn.disabled = false;
+        closeArchiveModal();
+        showErrorToast('Network error while archiving document.');
+      });
     }
 
     function approveDoc(id, name) {
-      if (confirm(`Approve document "${name}"? It will become publicly visible.`)) {
-        fetch(`/api/admin/dms/documents/${id}/approve`, {
-          method: 'POST',
-          headers: { [csrfHeader]: csrfToken }
-        })
-        .then(async res => {
-          if (res.ok) {
-            loadDocuments();
-          } else if (res.status === 409) {
-            showConflictToast(
-              'This document was modified by another administrator while approving. Please refresh and try again.'
-            );
-            loadDocuments();
-          } else {
-            alert('Failed to approve document.');
-          }
-        });
-      }
+      fetch(`/api/admin/dms/documents/${id}/approve`, {
+        method: 'POST',
+        headers: { [csrfHeader]: csrfToken }
+      })
+      .then(async res => {
+        if (res.ok) {
+          showSuccessMsg('Document approved successfully.');
+          loadDocuments();
+        } else if (res.status === 409) {
+          showConflictToast(
+            'This document was modified by another administrator while approving. Please refresh and try again.'
+          );
+          loadDocuments();
+        } else {
+          showErrorToast('Failed to approve document.');
+        }
+      });
     }
 
     function rejectDoc(id, name) {
       const remarks = prompt(`Reject document "${name}"?\nEnter rejection remarks (optional):`);
-      if (remarks === null) return; // User cancelled
+      if (remarks === null) return;
       fetch(`/api/admin/dms/documents/${id}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
@@ -522,6 +633,7 @@
       })
       .then(async res => {
         if (res.ok) {
+          showSuccessMsg('Document rejected.');
           loadDocuments();
         } else if (res.status === 409) {
           showConflictToast(
@@ -529,10 +641,31 @@
           );
           loadDocuments();
         } else {
-          alert('Failed to reject document.');
+          showErrorToast('Failed to reject document.');
         }
       });
     }
+
+    // Modal backdrop and Escape key event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      const archiveModal = document.getElementById('archive-modal');
+      if (archiveModal) {
+        archiveModal.addEventListener('click', function(e) {
+          if (e.target === archiveModal) {
+            closeArchiveModal();
+          }
+        });
+      }
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const archiveModal = document.getElementById('archive-modal');
+          if (archiveModal && archiveModal.classList.contains('active')) {
+            closeArchiveModal();
+          }
+        }
+      });
+    });
 
     // ---- Conflict toast helpers ----
     function showConflictToast(message) {
@@ -540,30 +673,59 @@
       const msg   = document.getElementById('conflict-toast-msg');
       msg.textContent = message || 'This document was modified by another administrator. Please refresh before saving again.';
       toast.classList.add('visible');
-      // Auto-dismiss after 8 seconds
       setTimeout(dismissToast, 8000);
     }
     function dismissToast() {
       document.getElementById('conflict-toast').classList.remove('visible');
     }
 
-    // ---- Transient success message (replaces alert for version upload) ----
+    function showErrorToast(msg) {
+      const toast = document.getElementById('conflict-toast');
+      const msgEl = document.getElementById('conflict-toast-msg');
+      toast.style.background = '#fee2e2';
+      toast.style.borderColor = '#ef4444';
+      const icon = toast.querySelector('i');
+      if (icon) {
+        icon.className = 'fas fa-exclamation-circle';
+        icon.style.color = '#dc2626';
+      }
+      msgEl.style.color = '#991b1b';
+      msgEl.textContent = msg || 'An error occurred. Please try again.';
+      toast.classList.add('visible');
+      setTimeout(() => {
+        dismissToast();
+        toast.style.background = '';
+        toast.style.borderColor = '';
+        if (icon) {
+          icon.className = 'fas fa-exclamation-triangle';
+          icon.style.color = '';
+        }
+        msgEl.style.color = '';
+      }, 5000);
+    }
+
+    // ---- Transient success message ----
     function showSuccessMsg(msg) {
-      // Reuse the toast with a green style for success
       const toast = document.getElementById('conflict-toast');
       const msgEl = document.getElementById('conflict-toast-msg');
       toast.style.background = '#dcfce7';
       toast.style.borderColor = '#22c55e';
-      toast.querySelector('i').style.color = '#15803d';
+      const icon = toast.querySelector('i');
+      if (icon) {
+        icon.className = 'fas fa-check-circle';
+        icon.style.color = '#15803d';
+      }
       msgEl.style.color = '#14532d';
       msgEl.textContent = msg || 'Operation completed successfully.';
       toast.classList.add('visible');
       setTimeout(() => {
         dismissToast();
-        // Reset colours
         toast.style.background = '';
         toast.style.borderColor = '';
-        toast.querySelector('i').style.color = '';
+        if (icon) {
+          icon.className = 'fas fa-exclamation-triangle';
+          icon.style.color = '';
+        }
         msgEl.style.color = '';
       }, 5000);
     }

@@ -25,6 +25,7 @@ public class DocumentMasterDTO {
     private String processGroup;
     private String category;
     private String documentName;
+    private String description;
     private String currentVersion;
     private String status;
     private String createdBy;

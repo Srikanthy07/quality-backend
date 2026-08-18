@@ -492,6 +492,9 @@ public class DmsDocumentService {
             if (updateData.getProcessGroup() != null && !updateData.getProcessGroup().trim().isEmpty()) {
                 master.setProcessGroup(updateData.getProcessGroup().trim());
             }
+            if (updateData.getDescription() != null) {
+                master.setDescription(updateData.getDescription().trim());
+            }
 
             master.setUpdatedDate(LocalDateTime.now());
             master = documentMasterRepository.save(master);
@@ -542,6 +545,7 @@ public class DmsDocumentService {
                 .processGroup(master.getProcessGroup())
                 .category(master.getCategory())
                 .documentName(master.getDocumentName())
+                .description(master.getDescription())
                 .currentVersion(master.getCurrentVersion())
                 .status(master.getStatus())
                 .createdBy(master.getCreatedBy())

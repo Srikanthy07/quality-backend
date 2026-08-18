@@ -52,6 +52,9 @@ public class DocumentMaster {
     @Column(name = "document_name", nullable = false)
     private String documentName;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "current_version", nullable = false)
     private String currentVersion;
 
