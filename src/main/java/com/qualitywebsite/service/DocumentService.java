@@ -54,17 +54,14 @@ public class DocumentService {
 
     public boolean isMasterApproved(DocumentEntity doc) {
         if (doc == null || !Boolean.TRUE.equals(doc.getIsActive())) return false;
+        
         Optional<DocumentMaster> masterOpt = documentMasterRepository
                 .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
                         doc.getProcess(), doc.getCategory(), doc.getDocumentName());
         if (masterOpt.isPresent()) {
-            return "APPROVED".equalsIgnoreCase(masterOpt.get().getStatus());
+            DocumentMaster master = masterOpt.get();
+            return "APPROVED".equalsIgnoreCase(master.getStatus());
         }
-
-        List<DocumentMaster> masters = documentMasterRepository.findByStatus("APPROVED");
-        boolean existsApprovedByName = masters.stream()
-                .anyMatch(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()));
-        if (existsApprovedByName) return true;
 
         Optional<DocumentMaster> masterByNameOpt = documentMasterRepository.findAll().stream()
                 .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
@@ -73,7 +70,8 @@ public class DocumentService {
             return "APPROVED".equalsIgnoreCase(masterByNameOpt.get().getStatus());
         }
 
-        return true;
+        // Phase 3 Hardening Rule: If DMS master cannot be found, public access MUST be denied (return false).
+        return false;
     }
 
     public boolean isDuplicate(String id, String documentName, String category, String process) {

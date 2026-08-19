@@ -62,12 +62,15 @@ public class PublicDataController {
         return ResponseEntity.ok(masterListService.getAllItems());
     }
 
-    // Global Search: searches active documents and master list
     @GetMapping(value = {"/api/public/search"}, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<com.qualitywebsite.dto.MasterListSearchResultDTO>> globalSearch(
-            @RequestParam(required = false) String query) {
+            @RequestParam(required = false) String query,
+            HttpServletRequest request) {
 
         List<com.qualitywebsite.dto.MasterListSearchResultDTO> results = masterListService.searchMasterList(query);
+        if (query != null && !query.trim().isEmpty()) {
+            websiteAnalyticsService.logSearch(query, results.size(), getVisitorId(request));
+        }
         return ResponseEntity.ok(results);
     }
 
