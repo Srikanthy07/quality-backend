@@ -280,4 +280,37 @@ class AdminSessionTimeoutIntegrationTest {
         // 7. Verify sessionA remains EXPIRED
         assertTrue(sessionA.isInvalid());
     }
+
+    @Test
+    void testPublicWebsiteIsIndependentOfExpiredAdminSession() throws Exception {
+        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
+        simulateSessionTimeout(session);
+        Cookie expiredJsessionId = new Cookie("JSESSIONID", "EXPIRED_SESSION_ID_123");
+
+        // Public page loads normally (200 OK) without redirecting to /admin/login
+        mockMvc.perform(get("/index.html").secure(true).cookie(expiredJsessionId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/master-list.html").secure(true).cookie(expiredJsessionId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/public/documents").secure(true).cookie(expiredJsessionId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testAdminEndpointsRejectExpiredSession() throws Exception {
+        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
+        simulateSessionTimeout(session);
+        Cookie expiredJsessionId = new Cookie("JSESSIONID", "EXPIRED_SESSION_ID_123");
+
+        // Admin page redirects to login
+        mockMvc.perform(get("/admin/dashboard").secure(true).cookie(expiredJsessionId))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/admin/login*"));
+
+        // Admin API redirects to login
+        mockMvc.perform(get("/api/admin/dms/documents").secure(true).cookie(expiredJsessionId))
+                .andExpect(status().is3xxRedirection());
+    }
 }
