@@ -5,7 +5,6 @@ server:
     bundle: my-server-bundle
   servlet:
     session:
-      timeout: 30m
       cookie:
         http-only: true
         secure: ${SSL_ENABLED:false}

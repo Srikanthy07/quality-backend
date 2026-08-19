@@ -3,8 +3,8 @@ package com.qualitywebsite.security;
 import com.qualitywebsite.entity.AdminUser;
 import com.qualitywebsite.repository.AdminUserRepository;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpSessionEvent;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,7 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -42,9 +41,6 @@ class AdminSessionTimeoutIntegrationTest {
 
     @Autowired
     private SessionRegistry sessionRegistry;
-
-    @Autowired
-    private HttpSessionEventPublisher httpSessionEventPublisher;
 
     @Autowired
     private LoginRateLimiterService loginRateLimiterService;
@@ -88,13 +84,8 @@ class AdminSessionTimeoutIntegrationTest {
                 .andReturn();
     }
 
-    private void simulateSessionTimeout(MockHttpSession session) {
-        String sessionId = session.getId();
-        httpSessionEventPublisher.sessionDestroyed(new HttpSessionEvent(session));
-        session.invalidate();
-    }
-
     @Test
+    @DisplayName("1. Admin login succeeds with valid credentials")
     void test1_AdminLoginSucceeds() throws Exception {
         MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
         assertNotNull(session);
@@ -102,69 +93,84 @@ class AdminSessionTimeoutIntegrationTest {
     }
 
     @Test
-    void test2_AdminSessionRemainsAccessibleBeforeTimeout() throws Exception {
+    @DisplayName("2. Unauthenticated users cannot access /admin/** endpoints")
+    void test2_UnauthenticatedAccessToAdminRoutes_RedirectsToLogin() throws Exception {
+        mockMvc.perform(get("/admin/dashboard").secure(true))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/admin/login*"));
+
+        mockMvc.perform(get("/admin/documents").secure(true))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/admin/login*"));
+    }
+
+    @Test
+    @DisplayName("3. Authenticated administrators can continue using the Admin Portal")
+    void test3_AdminSessionRemainsAccessible() throws Exception {
         MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session))
                 .andExpect(status().isOk());
-    }
 
-    @Test
-    void test3_AdminSessionExpiresAfterConfiguredTimeout() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session);
-        assertTrue(session.isInvalid());
-    }
-
-    @Test
-    void test4_ExpiredSessionCannotAccessAdminProtectedEndpoints() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session);
-
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session))
-                .andExpect(status().is3xxRedirection());
-    }
-
-    @Test
-    void test5_AfterSessionExpirationLoginPageIsAccessible() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session);
-
-        mockMvc.perform(get("/admin/login").secure(true))
+        mockMvc.perform(get("/admin/documents").secure(true).session(session))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void test6_AfterSessionExpirationEnteringValidCredentialsCreatesNewAuthenticatedSession() throws Exception {
-        MockHttpSession session1 = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session1);
+    @DisplayName("4. Public pages remain accessible without administrator authentication")
+    void test4_PublicPagesAccessibleWithoutAuthentication() throws Exception {
+        mockMvc.perform(get("/index.html").secure(true))
+                .andExpect(status().isOk());
 
-        MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
-        assertNotNull(session2);
-        assertFalse(session2.isInvalid());
-        assertNotEquals(session1.getId(), session2.getId());
-    }
+        mockMvc.perform(get("/master-list.html").secure(true))
+                .andExpect(status().isOk());
 
-    @Test
-    void test7_AfterSessionExpirationAdministratorCanAccessDashboardAgain() throws Exception {
-        MockHttpSession session1 = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session1);
+        mockMvc.perform(get("/generic-template.html").secure(true))
+                .andExpect(status().isOk());
 
-        MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session2))
+        mockMvc.perform(get("/lessons-learned.html").secure(true))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/quality-checks.html").secure(true))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void test8_ExpiredSessionIsRemovedFromSessionRegistry() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        assertNotNull(sessionRegistry.getSessionInformation(session.getId()));
+    @DisplayName("5. Public document APIs remain accessible without authentication")
+    void test5_PublicDocumentApisRemainAccessible() throws Exception {
+        mockMvc.perform(get("/api/public/documents").secure(true))
+                .andExpect(status().isOk());
 
-        simulateSessionTimeout(session);
-        assertNull(sessionRegistry.getSessionInformation(session.getId()));
+        mockMvc.perform(get("/api/public/generic-templates").secure(true))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/public/lessons-learned").secure(true))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/public/master-list").secure(true))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/public/search?query=test").secure(true))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void test9_RememberMeContinuesToWorkCorrectly() throws Exception {
+    @DisplayName("6. Public users are never redirected to /admin/login because of removed timeout or invalid cookies")
+    void test6_PublicUsersNeverRedirectedToAdminLogin() throws Exception {
+        Cookie dummyCookie = new Cookie("JSESSIONID", "DUMMY_SESSION_ID_999");
+
+        mockMvc.perform(get("/index.html").secure(true).cookie(dummyCookie))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/master-list.html").secure(true).cookie(dummyCookie))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/public/documents").secure(true).cookie(dummyCookie))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("7. Existing Remember-Me functionality continues to work")
+    void test7_RememberMeContinuesToWork() throws Exception {
         MvcResult result = performLoginWithRememberMe("admin", "Admin#Pass2026!");
         Cookie rememberMeCookie = result.getResponse().getCookie("remember-me");
         assertNotNull(rememberMeCookie);
@@ -174,23 +180,8 @@ class AdminSessionTimeoutIntegrationTest {
     }
 
     @Test
-    void test10_RememberMeDoesNotPreventFreshUsernamePasswordLoginAfterSessionExpiration() throws Exception {
-        MvcResult result = performLoginWithRememberMe("admin", "Admin#Pass2026!");
-        MockHttpSession session1 = (MockHttpSession) result.getRequest().getSession();
-        Cookie rememberMeCookie = result.getResponse().getCookie("remember-me");
-
-        simulateSessionTimeout(session1);
-
-        // Fresh login using form submit with remember-me cookie present
-        MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
-        assertNotNull(session2);
-
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session2))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void test11_MaximumTwoActiveSessionsStillWorks() throws Exception {
+    @DisplayName("8. Maximum two active sessions limit is enforced")
+    void test8_MaximumTwoActiveSessionsLimit() throws Exception {
         MockHttpSession session1 = performLogin("admin", "Admin#Pass2026!");
         MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
 
@@ -202,17 +193,18 @@ class AdminSessionTimeoutIntegrationTest {
     }
 
     @Test
-    void test12_ThirdLoginExpiresOldestActiveSession() throws Exception {
+    @DisplayName("9. Third login evicts oldest active session")
+    void test9_ThirdLoginEvictsOldestSession() throws Exception {
         MockHttpSession session1 = performLogin("admin", "Admin#Pass2026!");
         MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
         MockHttpSession session3 = performLogin("admin", "Admin#Pass2026!");
 
-        // Session 1 must be expired
+        // Session 1 must be evicted
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session1))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/login?evicted=true"));
 
-        // Sessions 2 and 3 must remain active
+        // Sessions 2 and 3 remain active
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session2))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session3))
@@ -220,7 +212,8 @@ class AdminSessionTimeoutIntegrationTest {
     }
 
     @Test
-    void test13_ManualLogoutFreesSessionSlot() throws Exception {
+    @DisplayName("10. Manual logout frees session slot and invalidates session")
+    void test10_ManualLogoutFreesSessionSlot() throws Exception {
         MockHttpSession session1 = performLogin("admin", "Admin#Pass2026!");
         MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
 
@@ -232,85 +225,5 @@ class AdminSessionTimeoutIntegrationTest {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/admin/dashboard").secure(true).session(session3))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    void test14_MultipleTabsSharingOneJsessionIdCountAsOneSession() throws Exception {
-        MockHttpSession session1 = performLogin("admin", "Admin#Pass2026!");
-
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session1)).andExpect(status().isOk());
-        mockMvc.perform(get("/admin/documents").secure(true).session(session1)).andExpect(status().isOk());
-
-        MockHttpSession session2 = performLogin("admin", "Admin#Pass2026!");
-
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session1)).andExpect(status().isOk());
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session2)).andExpect(status().isOk());
-    }
-
-    @Test
-    void test15_Analytics30MinTimeoutDoesNotAffectAdminAuthentication() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(session))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testEdgeCase_LoginInAAndB_SessionATimesOut_ReLoginFromA_TotalSessionsMaxTwo() throws Exception {
-        // 1. Login Admin in Browser A (sessionA)
-        MockHttpSession sessionA = performLogin("admin", "Admin#Pass2026!");
-
-        // 2. Login Admin in Browser B (sessionB)
-        MockHttpSession sessionB = performLogin("admin", "Admin#Pass2026!");
-
-        // 3. Session A times out after 30 minutes
-        simulateSessionTimeout(sessionA);
-
-        // 4. Re-login from Browser A -> creates sessionA2
-        MockHttpSession sessionA2 = performLogin("admin", "Admin#Pass2026!");
-        assertNotNull(sessionA2);
-
-        // 5. Verify sessionA2 is ACTIVE
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(sessionA2))
-                .andExpect(status().isOk());
-
-        // 6. Verify sessionB remains ACTIVE
-        mockMvc.perform(get("/admin/dashboard").secure(true).session(sessionB))
-                .andExpect(status().isOk());
-
-        // 7. Verify sessionA remains EXPIRED
-        assertTrue(sessionA.isInvalid());
-    }
-
-    @Test
-    void testPublicWebsiteIsIndependentOfExpiredAdminSession() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session);
-        Cookie expiredJsessionId = new Cookie("JSESSIONID", "EXPIRED_SESSION_ID_123");
-
-        // Public page loads normally (200 OK) without redirecting to /admin/login
-        mockMvc.perform(get("/index.html").secure(true).cookie(expiredJsessionId))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(get("/master-list.html").secure(true).cookie(expiredJsessionId))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(get("/api/public/documents").secure(true).cookie(expiredJsessionId))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testAdminEndpointsRejectExpiredSession() throws Exception {
-        MockHttpSession session = performLogin("admin", "Admin#Pass2026!");
-        simulateSessionTimeout(session);
-        Cookie expiredJsessionId = new Cookie("JSESSIONID", "EXPIRED_SESSION_ID_123");
-
-        // Admin page redirects to login
-        mockMvc.perform(get("/admin/dashboard").secure(true).cookie(expiredJsessionId))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("**/admin/login*"));
-
-        // Admin API redirects to login
-        mockMvc.perform(get("/api/admin/dms/documents").secure(true).cookie(expiredJsessionId))
-                .andExpect(status().is3xxRedirection());
     }
 }

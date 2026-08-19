@@ -153,19 +153,9 @@ public class SecurityConfig {
             http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
         }
 
-        org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy adminInvalidSessionStrategy =
-                new org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy("/admin/login?expired=true");
-
         http
             .sessionManagement(session -> session
                 .sessionFixation(fixation -> fixation.changeSessionId())
-                .invalidSessionStrategy((request, response) -> {
-                    String requestURI = request.getRequestURI();
-                    if (requestURI.startsWith("/admin") || requestURI.startsWith("/api/admin")) {
-                        adminInvalidSessionStrategy.onInvalidSessionDetected(request, response);
-                    }
-                    // Public routes: ignore invalid admin session and proceed cleanly without redirect
-                })
                 .maximumSessions(2)
                 .maxSessionsPreventsLogin(false)
                 .sessionRegistry(sessionRegistry())
