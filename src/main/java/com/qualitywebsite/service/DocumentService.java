@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 
+import com.qualitywebsite.entity.DocumentMaster;
+import com.qualitywebsite.repository.DocumentMasterRepository;
+
 import java.util.*;
 
 @Service
@@ -20,27 +23,57 @@ import java.util.*;
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
+    private final DocumentMasterRepository documentMasterRepository;
     private final ActivityLogService activityLogService;
 
     @Value("${app.upload.dir:./uploaded-documents}")
     private String uploadDir;
 
     public List<DocumentEntity> getAllDocuments() {
-        // Return only active documents
-        return documentRepository.findAllByIsActiveTrue();
+        return documentRepository.findAllByIsActiveTrue().stream()
+                .filter(this::isMasterApproved)
+                .toList();
     }
 
     // Search and filter documents by query and category
     public List<DocumentEntity> searchAndFilter(String query, String category) {
-        return documentRepository.searchAndFilter(query, category);
+        return documentRepository.searchAndFilter(query, category).stream()
+                .filter(this::isMasterApproved)
+                .toList();
     }
 
     public Optional<DocumentEntity> getById(String id) {
-        return documentRepository.findById(id);
+        return documentRepository.findById(id).filter(this::isMasterApproved);
     }
 
     public List<DocumentEntity> getByCategory(String category) {
-        return documentRepository.findByCategoryIgnoreCaseAndIsActiveTrue(category);
+        return documentRepository.findByCategoryIgnoreCaseAndIsActiveTrue(category).stream()
+                .filter(this::isMasterApproved)
+                .toList();
+    }
+
+    public boolean isMasterApproved(DocumentEntity doc) {
+        if (doc == null || !Boolean.TRUE.equals(doc.getIsActive())) return false;
+        Optional<DocumentMaster> masterOpt = documentMasterRepository
+                .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+                        doc.getProcess(), doc.getCategory(), doc.getDocumentName());
+        if (masterOpt.isPresent()) {
+            return "APPROVED".equalsIgnoreCase(masterOpt.get().getStatus());
+        }
+
+        List<DocumentMaster> masters = documentMasterRepository.findByStatus("APPROVED");
+        boolean existsApprovedByName = masters.stream()
+                .anyMatch(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()));
+        if (existsApprovedByName) return true;
+
+        Optional<DocumentMaster> masterByNameOpt = documentMasterRepository.findAll().stream()
+                .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
+                .findFirst();
+        if (masterByNameOpt.isPresent()) {
+            return "APPROVED".equalsIgnoreCase(masterByNameOpt.get().getStatus());
+        }
+
+        return true;
     }
 
     public boolean isDuplicate(String id, String documentName, String category, String process) {

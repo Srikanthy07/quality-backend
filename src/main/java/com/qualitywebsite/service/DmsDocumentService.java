@@ -9,6 +9,7 @@ import com.qualitywebsite.entity.DocumentVersion;
 import com.qualitywebsite.exception.DocumentConflictException;
 import com.qualitywebsite.repository.DmsMigrationLogRepository;
 import com.qualitywebsite.repository.DocumentMasterRepository;
+import com.qualitywebsite.repository.DocumentRepository;
 import com.qualitywebsite.repository.DocumentVersionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class DmsDocumentService {
     private final DocumentMasterRepository documentMasterRepository;
     private final DocumentVersionRepository documentVersionRepository;
     private final DmsMigrationLogRepository dmsMigrationLogRepository;
+    private final DocumentRepository documentRepository;
     private final ActivityLogService activityLogService;
     private final Tika tika = new Tika();
 
@@ -334,7 +336,13 @@ public class DmsDocumentService {
 
     @Transactional(readOnly = true)
     public List<DocumentMasterDTO> getAllAdminDocuments(String query, String category) {
-        return documentMasterRepository.searchAndFilter(query, category).stream()
+        return getAllAdminDocuments(query, category, "ACTIVE");
+    }
+
+    @Transactional(readOnly = true)
+    public List<DocumentMasterDTO> getAllAdminDocuments(String query, String category, String status) {
+        String cleanStatus = (status != null && !status.trim().isEmpty()) ? status.trim() : "ACTIVE";
+        return documentMasterRepository.searchAndFilter(query, category, cleanStatus).stream()
                 .map(this::toDTO)
                 .toList();
     }
@@ -391,6 +399,15 @@ public class DmsDocumentService {
                 documentVersionRepository.save(latest);
             }
 
+            // Sync legacy DocumentEntity if present so public endpoints immediately make it active
+            try {
+                documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
+                        .forEach(legacy -> {
+                            legacy.setIsActive(true);
+                            documentRepository.save(legacy);
+                        });
+            } catch (Exception ignored) {}
+
             // Only log on success
             logActivity(masterId, master.getCurrentVersion(), "APPROVE", username,
                     "Approved document: " + master.getDocumentName());
@@ -424,6 +441,15 @@ public class DmsDocumentService {
                 documentVersionRepository.save(latest);
             }
 
+            // Sync legacy DocumentEntity if present so public endpoints immediately exclude it
+            try {
+                documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
+                        .forEach(legacy -> {
+                            legacy.setIsActive(false);
+                            documentRepository.save(legacy);
+                        });
+            } catch (Exception ignored) {}
+
             // Only log on success
             logActivity(masterId, master.getCurrentVersion(), "REJECT", username,
                     "Rejected document: " + master.getDocumentName() + " (Remarks: " + remarks + ")");
@@ -454,6 +480,15 @@ public class DmsDocumentService {
                 documentVersionRepository.save(latest);
             }
 
+            // Sync legacy DocumentEntity if present so public endpoints immediately exclude it
+            try {
+                documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
+                        .forEach(legacy -> {
+                            legacy.setIsActive(false);
+                            documentRepository.save(legacy);
+                        });
+            } catch (Exception ignored) {}
+
             // Only log on success
             logActivity(masterId, master.getCurrentVersion(), "ARCHIVE", username,
                     "Archived document: " + master.getDocumentName());
@@ -462,6 +497,84 @@ public class DmsDocumentService {
         } catch (ObjectOptimisticLockingFailureException ex) {
             throw new DocumentConflictException(
                     "This document was modified by another administrator while archiving. " +
+                    "Please refresh and try again.", masterId);
+        }
+    }
+
+    @Transactional
+    public boolean restoreDocument(Long masterId, String username) {
+        try {
+            Optional<DocumentMaster> opt = documentMasterRepository.findById(masterId);
+            if (opt.isEmpty()) return false;
+
+            DocumentMaster master = opt.get();
+            master.setStatus("APPROVED");
+            master.setUpdatedDate(LocalDateTime.now());
+            documentMasterRepository.save(master);
+
+            Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId);
+            if (latestOpt.isPresent()) {
+                DocumentVersion latest = latestOpt.get();
+                latest.setApprovalStatus("APPROVED");
+                documentVersionRepository.save(latest);
+            }
+
+            // Sync legacy DocumentEntity if present so public endpoints immediately recognize the restored document as active
+            try {
+                documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
+                        .forEach(legacy -> {
+                            legacy.setIsActive(true);
+                            documentRepository.save(legacy);
+                        });
+            } catch (Exception ignored) {}
+
+            logActivity(masterId, master.getCurrentVersion(), "RESTORE", username,
+                    "Restored document: " + master.getDocumentName() + " (Restored to APPROVED status)");
+            return true;
+
+        } catch (ObjectOptimisticLockingFailureException ex) {
+            throw new DocumentConflictException(
+                    "This document was modified by another administrator while restoring. " +
+                    "Please refresh and try again.", masterId);
+        }
+    }
+
+    @Transactional
+    public boolean deletePermanently(Long masterId, String username) {
+        try {
+            Optional<DocumentMaster> opt = documentMasterRepository.findById(masterId);
+            if (opt.isEmpty()) return false;
+
+            DocumentMaster master = opt.get();
+            master.setStatus("DELETED");
+            master.setDeletedBy(username != null ? username : "admin");
+            master.setDeletedDate(LocalDateTime.now());
+            master.setUpdatedDate(LocalDateTime.now());
+            documentMasterRepository.save(master);
+
+            Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId);
+            if (latestOpt.isPresent()) {
+                DocumentVersion latest = latestOpt.get();
+                latest.setApprovalStatus("DELETED");
+                documentVersionRepository.save(latest);
+            }
+
+            // Sync legacy DocumentEntity if present so public endpoints immediately exclude it
+            try {
+                documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
+                        .forEach(legacy -> {
+                            legacy.setIsActive(false);
+                            documentRepository.save(legacy);
+                        });
+            } catch (Exception ignored) {}
+
+            logActivity(masterId, master.getCurrentVersion(), "PERMANENT_DELETE", username,
+                    "Permanently deleted document: " + master.getDocumentName() + " (Moved to Deleted Documents audit log)");
+            return true;
+
+        } catch (ObjectOptimisticLockingFailureException ex) {
+            throw new DocumentConflictException(
+                    "This document was modified by another administrator while deleting permanently. " +
                     "Please refresh and try again.", masterId);
         }
     }
@@ -550,7 +663,9 @@ public class DmsDocumentService {
                 .status(master.getStatus())
                 .createdBy(master.getCreatedBy())
                 .createdDate(master.getCreatedDate())
-                .updatedDate(master.getUpdatedDate());
+                .updatedDate(master.getUpdatedDate())
+                .deletedBy(master.getDeletedBy())
+                .deletedDate(master.getDeletedDate());
 
         if (latestOpt.isPresent()) {
             DocumentVersion latest = latestOpt.get();
@@ -721,14 +836,24 @@ public class DmsDocumentService {
     }
 
     public List<DocumentMasterDTO> searchAndFilter(String query, String category) {
-        return getAllAdminDocuments(query, category);
+        return searchAndFilter(query, category, "ACTIVE");
+    }
+
+    public List<DocumentMasterDTO> searchAndFilter(String query, String category, String status) {
+        return getAllAdminDocuments(query, category, status);
     }
 
     @Transactional(readOnly = true)
     public Page<DocumentMasterDTO> searchAndFilterPaged(String query, String category, Pageable pageable) {
+        return searchAndFilterPaged(query, category, "ACTIVE", pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DocumentMasterDTO> searchAndFilterPaged(String query, String category, String status, Pageable pageable) {
         String cleanQ = (query != null && !query.trim().isEmpty()) ? query.trim() : null;
         String cleanCat = (category != null && !category.trim().isEmpty()) ? category.trim() : null;
-        Page<DocumentMaster> pagedMasters = documentMasterRepository.searchAndFilterPaged(cleanQ, cleanCat, pageable);
+        String cleanStatus = (status != null && !status.trim().isEmpty()) ? status.trim() : "ACTIVE";
+        Page<DocumentMaster> pagedMasters = documentMasterRepository.searchAndFilterPaged(cleanQ, cleanCat, cleanStatus, pageable);
         return pagedMasters.map(this::toDTO);
     }
 }

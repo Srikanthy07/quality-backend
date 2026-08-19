@@ -50,6 +50,7 @@ public class AdminApiController {
     public ResponseEntity<?> getDmsDocuments(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
         if (page != null || size != null) {
@@ -57,7 +58,7 @@ public class AdminApiController {
             int pageSize = (size != null && size > 0) ? Math.min(size, 100) : 20;
             org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
                     pageNum, pageSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "updatedDate"));
-            org.springframework.data.domain.Page<DocumentMasterDTO> pagedResult = dmsDocumentService.searchAndFilterPaged(query, category, pageable);
+            org.springframework.data.domain.Page<DocumentMasterDTO> pagedResult = dmsDocumentService.searchAndFilterPaged(query, category, status, pageable);
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("content", pagedResult.getContent());
             response.put("page", pagedResult.getNumber());
@@ -66,7 +67,7 @@ public class AdminApiController {
             response.put("totalPages", pagedResult.getTotalPages());
             return ResponseEntity.ok(response);
         }
-        return ResponseEntity.ok(dmsDocumentService.searchAndFilter(query, category));
+        return ResponseEntity.ok(dmsDocumentService.searchAndFilter(query, category, status));
     }
 
     @GetMapping("/dms/documents/{id}")
@@ -182,6 +183,30 @@ public class AdminApiController {
         }
     }
 
+    @PostMapping("/dms/documents/{id}/restore")
+    public ResponseEntity<?> restoreDocument(@PathVariable Long id, Authentication auth) {
+        try {
+            boolean ok = dmsDocumentService.restoreDocument(id, getUsername(auth));
+            if (ok) return ResponseEntity.ok(Map.of("message", "Document restored successfully"));
+            return ResponseEntity.notFound().build();
+        } catch (DocumentConflictException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("status", 409, "error", "Conflict", "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/dms/documents/{id}/delete-permanently")
+    public ResponseEntity<?> deleteDocumentPermanently(@PathVariable Long id, Authentication auth) {
+        try {
+            boolean ok = dmsDocumentService.deletePermanently(id, getUsername(auth));
+            if (ok) return ResponseEntity.ok(Map.of("message", "Document permanently deleted and archived for audit logging"));
+            return ResponseEntity.notFound().build();
+        } catch (DocumentConflictException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("status", 409, "error", "Conflict", "message", e.getMessage()));
+        }
+    }
+
     @PutMapping("/dms/documents/{id}")
     public ResponseEntity<?> updateDmsMetadata(
             @PathVariable Long id,
@@ -213,8 +238,9 @@ public class AdminApiController {
     @GetMapping("/documents")
     public ResponseEntity<List<DocumentMasterDTO>> getDocuments(
             @RequestParam(required = false) String query,
-            @RequestParam(required = false) String category) {
-        return ResponseEntity.ok(dmsDocumentService.searchAndFilter(query, category));
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(dmsDocumentService.searchAndFilter(query, category, status));
     }
 
     @GetMapping("/documents/{id}")

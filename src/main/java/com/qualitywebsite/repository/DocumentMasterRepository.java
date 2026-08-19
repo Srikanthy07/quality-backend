@@ -41,8 +41,15 @@ public interface DocumentMasterRepository extends JpaRepository<DocumentMaster, 
            " LOWER(m.processGroup) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            " LOWER(m.category) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
            "(:category IS NULL OR :category = '' OR LOWER(m.category) = LOWER(:category)) AND " +
-           "m.status <> 'ARCHIVED'")
-    List<DocumentMaster> searchAndFilter(@Param("query") String query, @Param("category") String category);
+           "((:statusFilter IS NULL OR :statusFilter = '' OR :statusFilter = 'ACTIVE') AND m.status NOT IN ('ARCHIVED', 'DELETED') OR " +
+           " :statusFilter = 'ARCHIVED' AND m.status = 'ARCHIVED' OR " +
+           " :statusFilter = 'DELETED' AND m.status = 'DELETED' OR " +
+           " :statusFilter = 'ALL' AND m.status <> 'DELETED' OR " +
+           " (:statusFilter NOT IN ('ACTIVE', 'ARCHIVED', 'DELETED', 'ALL') AND LOWER(m.status) = LOWER(:statusFilter)))")
+    List<DocumentMaster> searchAndFilter(
+            @Param("query") String query,
+            @Param("category") String category,
+            @Param("statusFilter") String statusFilter);
 
     @Query("SELECT m FROM DocumentMaster m WHERE " +
            "(:query IS NULL OR :query = '' OR " +
@@ -52,10 +59,15 @@ public interface DocumentMasterRepository extends JpaRepository<DocumentMaster, 
            " LOWER(m.processGroup) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            " LOWER(m.category) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
            "(:category IS NULL OR :category = '' OR LOWER(m.category) = LOWER(:category)) AND " +
-           "m.status <> 'ARCHIVED'")
+           "((:statusFilter IS NULL OR :statusFilter = '' OR :statusFilter = 'ACTIVE') AND m.status NOT IN ('ARCHIVED', 'DELETED') OR " +
+           " :statusFilter = 'ARCHIVED' AND m.status = 'ARCHIVED' OR " +
+           " :statusFilter = 'DELETED' AND m.status = 'DELETED' OR " +
+           " :statusFilter = 'ALL' AND m.status <> 'DELETED' OR " +
+           " (:statusFilter NOT IN ('ACTIVE', 'ARCHIVED', 'DELETED', 'ALL') AND LOWER(m.status) = LOWER(:statusFilter)))")
     org.springframework.data.domain.Page<DocumentMaster> searchAndFilterPaged(
             @Param("query") String query,
             @Param("category") String category,
+            @Param("statusFilter") String statusFilter,
             org.springframework.data.domain.Pageable pageable);
 
     @Query("SELECT m FROM DocumentMaster m WHERE " +

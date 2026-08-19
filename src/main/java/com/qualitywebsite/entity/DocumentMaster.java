@@ -70,6 +70,12 @@ public class DocumentMaster {
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
 
+    @Column(name = "deleted_by")
+    private String deletedBy;
+
+    @Column(name = "deleted_date")
+    private LocalDateTime deletedDate;
+
     @OneToMany(mappedBy = "documentMaster", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<DocumentVersion> versions = new ArrayList<>();

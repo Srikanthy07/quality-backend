@@ -21,11 +21,13 @@ public class MasterListService {
 
     private final MasterListItemRepository masterListItemRepository;
     private final DocumentRepository documentRepository;
+    private final DocumentService documentService;
     private final ActivityLogService activityLogService;
 
     public List<MasterListItem> getAllItems() {
         AtomicInteger sNo = new AtomicInteger(1);
         return documentRepository.findByCategoryIgnoreCaseAndIsActiveTrue(ASPICE_PRM_CATEGORY).stream()
+                .filter(documentService::isMasterApproved)
                 .sorted(masterListDocumentComparator())
                 .map(document -> toMasterListItem(document, sNo.getAndIncrement()))
                 .toList();
@@ -69,6 +71,7 @@ public class MasterListService {
         // 2. Search Other Active Documents (Generic Templates, Lessons Learned, Assessment Checklist)
         for (DocumentEntity doc : documentRepository.findAllByIsActiveTrue()) {
             if (ASPICE_PRM_CATEGORY.equalsIgnoreCase(doc.getCategory())) continue;
+            if (!documentService.isMasterApproved(doc)) continue;
             if (matchesDocTokens(doc, tokens)) {
                 results.add(com.qualitywebsite.dto.MasterListSearchResultDTO.builder()
                         .processId(nullToEmpty(doc.getProcess()))

@@ -16,6 +16,8 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, String
 
     List<DocumentEntity> findByCategoryIgnoreCase(String category);
 
+    List<DocumentEntity> findByDocumentNameIgnoreCase(String documentName);
+
     List<DocumentEntity> findByCategoryIgnoreCaseAndIsActiveTrue(String category);
 
     List<DocumentEntity> findByProcessIgnoreCase(String process);

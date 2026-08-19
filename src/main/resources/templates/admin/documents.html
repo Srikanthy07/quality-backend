@@ -41,6 +41,13 @@
       from { top: -40px; opacity: 0; }
       to   { top:  20px; opacity: 1; }
     }
+    @keyframes highlightFade {
+      0% { background-color: #e0f2fe; }
+      100% { background-color: transparent; }
+    }
+    .row-highlight {
+      animation: highlightFade 3s ease-out forwards;
+    }
   </style>
 </head>
 <body>
@@ -114,6 +121,13 @@
               <option value="Generic Templates">Generic Templates</option>
               <option value="Lessons Learned">Lessons Learned</option>
               <option value="Assessment Checklist">Assessment Checklist</option>
+            </select>
+
+            <select id="status-filter" class="filter-select">
+              <option value="ACTIVE" selected>Active Documents</option>
+              <option value="ARCHIVED">Archived Documents</option>
+              <option value="ALL">All Documents</option>
+              <option value="DELETED">Deleted Documents</option>
             </select>
 
             <a href="/admin/documents/upload" class="btn-teal"><i class="fas fa-plus"></i> Upload Document</a>
@@ -277,17 +291,74 @@
     </div>
   </div>
 
+  <!-- Restore Confirmation Modal -->
+  <div class="modal-overlay" id="restore-modal">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Restore Document</h3>
+        <button class="modal-close" onclick="closeRestoreModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:28px 24px;">
+        <div style="width:56px; height:56px; border-radius:50%; background:#e0f2fe; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px auto;">
+          <i class="fas fa-rotate-left"></i>
+        </div>
+        <h4 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:8px;" id="restore-modal-prompt">
+          Are you sure you want to restore this document?
+        </h4>
+        <p style="font-size:0.9rem; color:#64748b; margin:0; line-height:1.5;">
+          The document will be restored to its previously approved status and will become visible on the public website.
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:12px;">
+        <button type="button" class="btn-outline" id="restore-modal-cancel-btn" onclick="closeRestoreModal()">Cancel</button>
+        <button type="button" class="btn-teal" id="restore-modal-confirm-btn" onclick="confirmRestoreDoc()">Restore</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Permanent Delete Confirmation Modal -->
+  <div class="modal-overlay" id="perm-delete-modal">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Permanently Delete Document?</h3>
+        <button class="modal-close" onclick="closePermanentDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:28px 24px;">
+        <div style="width:56px; height:56px; border-radius:50%; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px auto;">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h4 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:8px;" id="perm-delete-modal-prompt">
+          Do you want to permanently delete this document? This action cannot be undone.
+        </h4>
+        <p style="font-size:0.9rem; color:#64748b; margin:0; line-height:1.5;">
+          The document will be removed from the Archived Documents list and moved to Deleted Documents. It will no longer be available on the public website.
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:12px;">
+        <button type="button" class="btn-outline" id="perm-delete-cancel-btn" onclick="closePermanentDeleteModal()">Cancel</button>
+        <button type="button" class="btn-teal" id="perm-delete-confirm-btn" onclick="confirmPermanentDeleteDoc()" style="background:#dc2626; border-color:#dc2626; color:#fff;">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
   <script th:inline="javascript">
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
 
     let allDocs = [];
+    let currentStatusFilter = 'ACTIVE';
+    let fetchController = null;
+    let searchDebounceTimer = null;
 
     document.addEventListener('DOMContentLoaded', function() {
       loadDocuments();
 
-      document.getElementById('search-input').addEventListener('input', filterAndRender);
-      document.getElementById('category-filter').addEventListener('change', filterAndRender);
+      document.getElementById('search-input').addEventListener('input', debouncedLoadDocuments);
+      document.getElementById('category-filter').addEventListener('change', loadDocuments);
+      document.getElementById('status-filter').addEventListener('change', function() {
+        currentStatusFilter = this.value;
+        loadDocuments();
+      });
     });
 
     function formatDocumentName(documentName) {
@@ -295,22 +366,81 @@
       return documentName.replace(/^(SYS|SWE|SUP|MAN|PIM|SPL|HWE|MLE)\.\d+\s*/i, "").trim();
     }
 
+    function showLoadingState() {
+      const tbody = document.getElementById('documents-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = `
+        <tr id="loading-row">
+          <td colspan="8" style="text-align:center; padding:45px 20px; color:var(--text-muted, #64748b);">
+            <div style="display:inline-flex; align-items:center; justify-content:center; gap:12px; font-weight:600; font-size:1rem;">
+              <i class="fas fa-spinner fa-spin" style="font-size:1.5rem; color:#0284c7;"></i>
+              <span>Loading documents...</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function showErrorState() {
+      const tbody = document.getElementById('documents-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center; padding:45px 20px; color:#dc2626;">
+            <div style="display:inline-flex; align-items:center; justify-content:center; gap:12px; font-weight:500;">
+              <i class="fas fa-exclamation-circle" style="font-size:1.5rem;"></i>
+              <span>Unable to load documents. Please try again.</span>
+              <button type="button" class="btn-outline" onclick="loadDocuments()" style="margin-left:12px; padding:6px 14px; font-size:0.85rem; cursor:pointer;">Retry</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
     function loadDocuments() {
-      fetch('/api/admin/dms/documents')
-        .then(res => res.json())
+      if (fetchController) {
+        fetchController.abort();
+      }
+      fetchController = new AbortController();
+
+      showLoadingState();
+
+      const statusParam = encodeURIComponent(currentStatusFilter);
+      const qVal = document.getElementById('search-input') ? document.getElementById('search-input').value.trim() : '';
+      const catVal = document.getElementById('category-filter') ? document.getElementById('category-filter').value.trim() : '';
+      const qParam = encodeURIComponent(qVal);
+      const catParam = encodeURIComponent(catVal);
+
+      fetch(`/api/admin/dms/documents?status=${statusParam}&category=${catParam}&query=${qParam}`, {
+        signal: fetchController.signal
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to load documents');
+          return res.json();
+        })
         .then(docs => {
           allDocs = Array.isArray(docs) ? docs : (docs && docs.content ? docs.content : []);
           filterAndRender();
         })
         .catch(err => {
-          console.error(err);
-          document.getElementById('documents-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Failed to load documents from database.</td></tr>';
+          if (err.name === 'AbortError') return;
+          console.error('Error loading documents:', err);
+          showErrorState();
         });
+    }
+
+    function debouncedLoadDocuments() {
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      showLoadingState();
+      searchDebounceTimer = setTimeout(() => {
+        loadDocuments();
+      }, 300);
     }
 
     function filterAndRender() {
       const q = document.getElementById('search-input').value.toLowerCase().trim();
       const cat = document.getElementById('category-filter').value;
+      const statusVal = document.getElementById('status-filter').value;
 
       const filtered = allDocs.filter(d => {
         const matchesCat = !cat || d.category === cat;
@@ -318,7 +448,15 @@
           (d.documentName && d.documentName.toLowerCase().includes(q)) ||
           (d.processId && d.processId.toLowerCase().includes(q)) ||
           (d.processGroup && d.processGroup.toLowerCase().includes(q));
-        return matchesCat && matchesQ;
+
+        let matchesStatus = true;
+        if (statusVal === 'ACTIVE') {
+          matchesStatus = d.status !== 'ARCHIVED';
+        } else if (statusVal === 'ARCHIVED') {
+          matchesStatus = d.status === 'ARCHIVED';
+        }
+
+        return matchesCat && matchesQ && matchesStatus;
       });
 
       const tbody = document.getElementById('documents-tbody');
@@ -331,6 +469,9 @@
 
       filtered.forEach(d => {
         const tr = document.createElement('tr');
+        if (window.lastRestoredDocId && d.id === window.lastRestoredDocId) {
+          tr.classList.add('row-highlight');
+        }
         
         let badgeClass = 'badge-prm';
         if (d.category === 'Generic Templates') badgeClass = 'badge-gt';
@@ -339,7 +480,55 @@
 
         const updatedDate = d.updatedDate ? new Date(d.updatedDate).toLocaleDateString() : 'N/A';
         const downloadUrl = d.latestVersionId ? `/api/public/dms/download/${d.latestVersionId}` : '#';
-        const statusBadge = `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:600;">${escapeHtml(d.status || 'APPROVED')}</span>`;
+        let statusBg = '#e0f2fe';
+        let statusColor = '#0369a1';
+        if (d.status === 'ARCHIVED') {
+          statusBg = '#fee2e2';
+          statusColor = '#991b1b';
+        } else if (d.status === 'UNDER_REVIEW') {
+          statusBg = '#fef3c7';
+          statusColor = '#92400e';
+        } else if (d.status === 'REJECTED') {
+          statusBg = '#fce7f3';
+          statusColor = '#9d174d';
+        } else if (d.status === 'DELETED') {
+          statusBg = '#f1f5f9';
+          statusColor = '#475569';
+        }
+        const statusBadge = `<span class="badge" style="background:${statusBg}; color:${statusColor}; font-weight:600;">${escapeHtml(d.status || 'APPROVED')}</span>`;
+
+        let actionButtons = '';
+        if (d.status === 'ARCHIVED') {
+          actionButtons = `
+            <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
+            <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
+            <button class="action-btn" title="Restore Document" style="color:#0284c7;" onclick="openRestoreModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-rotate-left"></i></button>
+            <button class="action-btn delete" title="Delete Permanently" onclick="openPermanentDeleteModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
+          `;
+        } else if (d.status === 'DELETED') {
+          actionButtons = `
+            <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
+            <button class="action-btn" title="View Details" onclick="openEditModal(${d.id})"><i class="fas fa-info-circle"></i></button>
+          `;
+        } else if (d.status === 'UNDER_REVIEW') {
+          actionButtons = `
+            <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
+            <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
+            <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id})"><i class="fas fa-cloud-upload-alt"></i></button>
+            <button class="action-btn" title="Edit Details" onclick="openEditModal(${d.id})"><i class="fas fa-edit"></i></button>
+            <button class="action-btn" title="Approve" style="color:#16a34a;" onclick="approveDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-check-circle"></i></button>
+            <button class="action-btn delete" title="Reject" onclick="rejectDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-times-circle"></i></button>
+            <button class="action-btn delete" title="Archive / Delete" onclick="deleteDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
+          `;
+        } else {
+          actionButtons = `
+            <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
+            <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
+            <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id})"><i class="fas fa-cloud-upload-alt"></i></button>
+            <button class="action-btn" title="Edit Details" onclick="openEditModal(${d.id})"><i class="fas fa-edit"></i></button>
+            <button class="action-btn delete" title="Archive / Delete" onclick="deleteDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
+          `;
+        }
 
         tr.innerHTML = `
           <td><strong>${escapeHtml(formatDocumentName(d.documentName))}</strong></td>
@@ -351,15 +540,7 @@
           <td>${updatedDate}</td>
           <td>
             <div class="actions-cell">
-              <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
-              <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
-              <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id})"><i class="fas fa-cloud-upload-alt"></i></button>
-              <button class="action-btn" title="Edit Details" onclick="openEditModal(${d.id})"><i class="fas fa-edit"></i></button>
-              ${(d.status === 'UNDER_REVIEW') ? `
-                <button class="action-btn" title="Approve" style="color:#16a34a;" onclick="approveDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-check-circle"></i></button>
-                <button class="action-btn delete" title="Reject" onclick="rejectDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-times-circle"></i></button>
-              ` : ''}
-              <button class="action-btn delete" title="Archive / Delete" onclick="deleteDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
+              ${actionButtons}
             </div>
           </td>
         `;
@@ -601,6 +782,86 @@
         closeArchiveModal();
         showErrorToast('Network error while archiving document.');
       });
+    }
+
+    let targetRestoreDocId = null;
+
+    function openRestoreModal(id, name) {
+      targetRestoreDocId = id;
+      const promptEl = document.getElementById('restore-modal-prompt');
+      if (promptEl && name) {
+        promptEl.textContent = `Are you sure you want to restore "${formatDocumentName(name)}"?`;
+      }
+      document.getElementById('restore-modal').classList.add('active');
+    }
+
+    function closeRestoreModal() {
+      targetRestoreDocId = null;
+      document.getElementById('restore-modal').classList.remove('active');
+    }
+
+    function confirmRestoreDoc() {
+      if (!targetRestoreDocId) return;
+      const id = targetRestoreDocId;
+      closeRestoreModal();
+
+      fetch(`/api/admin/dms/documents/${id}/restore`, {
+        method: 'POST',
+        headers: { [csrfHeader]: csrfToken }
+      })
+      .then(async res => {
+        if (res.ok) {
+          window.lastRestoredDocId = id;
+          showSuccessMsg('Document restored successfully.');
+          loadDocuments();
+          setTimeout(() => { window.lastRestoredDocId = null; }, 3000);
+        } else if (res.status === 409) {
+          showConflictToast('This document was modified by another administrator while restoring. Please refresh and try again.');
+          loadDocuments();
+        } else {
+          showErrorToast('Failed to restore document.');
+        }
+      })
+      .catch(err => showErrorToast('Network error while restoring document.'));
+    }
+
+    let targetPermDeleteDocId = null;
+
+    function openPermanentDeleteModal(id, name) {
+      targetPermDeleteDocId = id;
+      const promptEl = document.getElementById('perm-delete-modal-prompt');
+      if (promptEl && name) {
+        promptEl.textContent = `Do you want to permanently delete "${formatDocumentName(name)}"? This action cannot be undone.`;
+      }
+      document.getElementById('perm-delete-modal').classList.add('active');
+    }
+
+    function closePermanentDeleteModal() {
+      targetPermDeleteDocId = null;
+      document.getElementById('perm-delete-modal').classList.remove('active');
+    }
+
+    function confirmPermanentDeleteDoc() {
+      if (!targetPermDeleteDocId) return;
+      const id = targetPermDeleteDocId;
+      closePermanentDeleteModal();
+
+      fetch(`/api/admin/dms/documents/${id}/delete-permanently`, {
+        method: 'POST',
+        headers: { [csrfHeader]: csrfToken }
+      })
+      .then(async res => {
+        if (res.ok) {
+          showSuccessMsg('Document permanently deleted and archived for audit logging.');
+          loadDocuments();
+        } else if (res.status === 409) {
+          showConflictToast('This document was modified by another administrator while deleting permanently. Please refresh and try again.');
+          loadDocuments();
+        } else {
+          showErrorToast('Failed to delete document permanently.');
+        }
+      })
+      .catch(err => showErrorToast('Network error while deleting document.'));
     }
 
     function approveDoc(id, name) {

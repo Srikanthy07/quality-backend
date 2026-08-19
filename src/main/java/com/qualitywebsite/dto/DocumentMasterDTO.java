@@ -31,6 +31,8 @@ public class DocumentMasterDTO {
     private String createdBy;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+    private String deletedBy;
+    private LocalDateTime deletedDate;
 
     // Latest version details
     private Long latestVersionId;
