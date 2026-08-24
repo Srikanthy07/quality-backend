@@ -57,21 +57,33 @@ public class DmsMigrationService {
                 String targetFileName = legacy.getFileName() != null ? legacy.getFileName() : (legacy.getDocumentName() + "." + getExtension(legacy.getFileName()).toLowerCase());
 
                 Optional<DocumentMaster> existingMasterOpt = documentMasterRepository.findByDocumentCode(code);
+                if (existingMasterOpt.isEmpty() && legacy.getProcess() != null && legacy.getCategory() != null && legacy.getDocumentName() != null) {
+                    existingMasterOpt = documentMasterRepository.findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+                            legacy.getProcess(), legacy.getCategory(), legacy.getDocumentName());
+                }
+                if (existingMasterOpt.isEmpty() && legacy.getDocumentName() != null) {
+                    existingMasterOpt = documentMasterRepository.findAll().stream()
+                            .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(legacy.getDocumentName()))
+                            .findFirst();
+                }
+
                 if (existingMasterOpt.isPresent() || documentVersionRepository.findFirstByFileNameIgnoreCase(targetFileName).isPresent()) {
                     if (existingMasterOpt.isPresent()) {
                         DocumentMaster master = existingMasterOpt.get();
-                        String legVer = legacy.getVersion() != null ? legacy.getVersion() : "1.0";
-                        if (!legVer.equals(master.getCurrentVersion())) {
-                            master.setCurrentVersion(legVer);
-                            documentMasterRepository.save(master);
+                        if (!"ARCHIVED".equalsIgnoreCase(master.getStatus()) && !"DELETED".equalsIgnoreCase(master.getStatus())) {
+                            String legVer = legacy.getVersion() != null ? legacy.getVersion() : "1.0";
+                            if (!legVer.equals(master.getCurrentVersion())) {
+                                master.setCurrentVersion(legVer);
+                                documentMasterRepository.save(master);
 
-                            int[] parts = parseVersion(legVer);
-                            Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
-                            if (latestOpt.isPresent()) {
-                                DocumentVersion dv = latestOpt.get();
-                                dv.setMajorVersion(parts[0]);
-                                dv.setMinorVersion(parts[1]);
-                                documentVersionRepository.save(dv);
+                                int[] parts = parseVersion(legVer);
+                                Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
+                                if (latestOpt.isPresent()) {
+                                    DocumentVersion dv = latestOpt.get();
+                                    dv.setMajorVersion(parts[0]);
+                                    dv.setMinorVersion(parts[1]);
+                                    documentVersionRepository.save(dv);
+                                }
                             }
                         }
                     }

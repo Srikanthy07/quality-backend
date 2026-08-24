@@ -18,6 +18,12 @@ public interface DocumentMasterRepository extends JpaRepository<DocumentMaster, 
     Optional<DocumentMaster> findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
             String processId, String category, String documentName);
 
+    @Query("SELECT m FROM DocumentMaster m WHERE LOWER(m.processId) = LOWER(:processId) AND LOWER(m.category) = LOWER(:category) AND LOWER(m.documentName) = LOWER(:documentName) AND m.status NOT IN ('ARCHIVED', 'DELETED')")
+    Optional<DocumentMaster> findActiveByProcessIdAndCategoryAndDocumentName(
+            @Param("processId") String processId,
+            @Param("category") String category,
+            @Param("documentName") String documentName);
+
     boolean existsByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
             String processId, String category, String documentName);
 

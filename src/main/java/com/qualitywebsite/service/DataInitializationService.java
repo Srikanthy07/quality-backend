@@ -122,16 +122,18 @@ public class DataInitializationService {
                                     );
                             if (masterOpt.isPresent()) {
                                 DocumentMaster master = masterOpt.get();
-                                master.setCurrentVersion(metaVer);
-                                documentMasterRepository.save(master);
+                                if (!"ARCHIVED".equalsIgnoreCase(master.getStatus()) && !"DELETED".equalsIgnoreCase(master.getStatus())) {
+                                    master.setCurrentVersion(metaVer);
+                                    documentMasterRepository.save(master);
 
-                                int[] parts = parseVersion(metaVer);
-                                Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
-                                if (latestOpt.isPresent()) {
-                                    DocumentVersion dv = latestOpt.get();
-                                    dv.setMajorVersion(parts[0]);
-                                    dv.setMinorVersion(parts[1]);
-                                    documentVersionRepository.save(dv);
+                                    int[] parts = parseVersion(metaVer);
+                                    Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
+                                    if (latestOpt.isPresent()) {
+                                        DocumentVersion dv = latestOpt.get();
+                                        dv.setMajorVersion(parts[0]);
+                                        dv.setMinorVersion(parts[1]);
+                                        documentVersionRepository.save(dv);
+                                    }
                                 }
                             }
                         }

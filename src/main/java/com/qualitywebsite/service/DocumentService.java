@@ -13,8 +13,12 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 
+import com.qualitywebsite.entity.DeletedDocument;
 import com.qualitywebsite.entity.DocumentMaster;
+import com.qualitywebsite.entity.DocumentVersion;
+import com.qualitywebsite.repository.DeletedDocumentRepository;
 import com.qualitywebsite.repository.DocumentMasterRepository;
+import com.qualitywebsite.repository.DocumentVersionRepository;
 
 import java.util.*;
 
@@ -24,6 +28,8 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final DocumentMasterRepository documentMasterRepository;
+    private final DocumentVersionRepository documentVersionRepository;
+    private final DeletedDocumentRepository deletedDocumentRepository;
     private final ActivityLogService activityLogService;
 
     @Value("${app.upload.dir:./uploaded-documents}")
@@ -201,6 +207,59 @@ public class DocumentService {
             // Soft delete: mark as inactive instead of removing the row
             doc.setIsActive(false);
             documentRepository.save(doc);
+
+            // Synchronize with DMS DocumentMaster and DocumentVersion if present
+            Optional<DocumentMaster> masterOpt = documentMasterRepository.findByDocumentCode(id);
+            if (masterOpt.isEmpty()) {
+                masterOpt = documentMasterRepository.findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+                        doc.getProcess(), doc.getCategory(), doc.getDocumentName());
+            }
+            if (masterOpt.isEmpty()) {
+                masterOpt = documentMasterRepository.findAll().stream()
+                        .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
+                        .findFirst();
+            }
+            if (masterOpt.isPresent()) {
+                DocumentMaster master = masterOpt.get();
+                master.setStatus("DELETED");
+                master.setDeletedBy(username != null ? username : "admin");
+                master.setDeletedDate(LocalDateTime.now());
+                master.setUpdatedDate(LocalDateTime.now());
+                documentMasterRepository.save(master);
+
+                Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
+                if (latestOpt.isPresent()) {
+                    DocumentVersion latest = latestOpt.get();
+                    latest.setApprovalStatus("DELETED");
+                    documentVersionRepository.save(latest);
+                }
+
+                try {
+                    DocumentVersion latest = latestOpt.orElse(null);
+                    DeletedDocument delDoc = deletedDocumentRepository.findByOriginalMasterId(master.getId())
+                            .orElseGet(() -> DeletedDocument.builder().originalMasterId(master.getId()).build());
+                    delDoc.setDocumentCode(master.getDocumentCode());
+                    delDoc.setProcessId(master.getProcessId());
+                    delDoc.setProcessName(master.getProcessName());
+                    delDoc.setProcessGroup(master.getProcessGroup());
+                    delDoc.setCategory(master.getCategory());
+                    delDoc.setDocumentName(master.getDocumentName());
+                    delDoc.setDescription(master.getDescription());
+                    delDoc.setCurrentVersion(master.getCurrentVersion());
+                    delDoc.setFileName(latest != null ? latest.getFileName() : doc.getFileName());
+                    delDoc.setFileType(latest != null ? latest.getFileType() : doc.getFileType());
+                    delDoc.setMimeType(latest != null ? latest.getMimeType() : null);
+                    delDoc.setFileSize(latest != null ? latest.getFileSize() : doc.getFileSize());
+                    delDoc.setFileData(latest != null ? latest.getFileData() : null);
+                    delDoc.setChecksum(latest != null ? latest.getChecksum() : null);
+                    delDoc.setCreatedBy(master.getCreatedBy());
+                    delDoc.setCreatedDate(master.getCreatedDate());
+                    delDoc.setDeletedBy(username != null ? username : "admin");
+                    delDoc.setDeletedDate(LocalDateTime.now());
+                    deletedDocumentRepository.save(delDoc);
+                } catch (Exception ignored) {}
+            }
+
             // Optionally keep the physical file for archival purposes; delete if desired
             deletePhysicalFile(doc.getFilePath());
             activityLogService.logActivity(username, "Deleted Document", "Soft‑deleted " + doc.getProcess() + " " + doc.getDocumentName());

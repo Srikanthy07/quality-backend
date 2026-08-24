@@ -4,8 +4,10 @@ import com.qualitywebsite.dto.DocumentMasterDTO;
 import com.qualitywebsite.dto.UploadResponseDTO;
 import com.qualitywebsite.dto.VersionHistoryDTO;
 import com.qualitywebsite.entity.DocumentEntity;
+import com.qualitywebsite.entity.DocumentMaster;
 import com.qualitywebsite.entity.MasterListItem;
 import com.qualitywebsite.exception.DocumentConflictException;
+import com.qualitywebsite.repository.DocumentMasterRepository;
 import com.qualitywebsite.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +38,7 @@ public class AdminApiController {
     private final SettingsService settingsService;
     private final ActivityLogService activityLogService;
     private final AdminAuthService adminAuthService;
+    private final DocumentMasterRepository documentMasterRepository;
 
     // --- Dashboard ---
     @GetMapping("/dashboard")
@@ -360,6 +364,11 @@ public class AdminApiController {
             if (ok) return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
             return ResponseEntity.notFound().build();
         } catch (NumberFormatException e) {
+            Optional<DocumentMaster> masterOpt = documentMasterRepository.findByDocumentCode(id);
+            if (masterOpt.isPresent()) {
+                boolean ok = dmsDocumentService.archiveDocument(masterOpt.get().getId(), getUsername(auth));
+                if (ok) return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
+            }
             boolean deleted = legacyDocumentService.deleteDocument(id, getUsername(auth));
             if (deleted) return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
             return ResponseEntity.notFound().build();
