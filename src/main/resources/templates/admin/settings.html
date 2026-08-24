@@ -188,6 +188,7 @@
     </div>
   </main>
 
+  <script src="/admin/js/admin-notifications.js"></script>
   <script th:inline="javascript">
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
@@ -232,6 +233,7 @@
 
     document.getElementById('settings-form').addEventListener('submit', function(e) {
       e.preventDefault();
+      clearAdminNotify('settings-alert');
       const payload = {};
       new FormData(this).forEach((value, key) => payload[key] = value);
 
@@ -245,26 +247,46 @@
       })
       .then(res => res.json())
       .then(data => {
-        showAlert('settings-alert', 'Settings updated successfully!', 'success');
+        adminNotify({
+          title: 'Footer updated successfully',
+          type: 'success',
+          containerId: 'settings-alert'
+        });
       })
       .catch(() => {
-        showAlert('settings-alert', 'Failed to update settings.', 'danger');
+        adminNotify({
+          title: 'Something went wrong',
+          message: 'Please try again.',
+          type: 'danger',
+          containerId: 'settings-alert'
+        });
       });
     });
 
     document.getElementById('password-form').addEventListener('submit', function(e) {
       e.preventDefault();
+      clearAdminNotify('pwd-alert');
       const cur = document.getElementById('currentPassword').value;
       const newP = document.getElementById('newPassword').value;
       const conP = document.getElementById('confirmPassword').value;
 
       if (newP.length < 12) {
-        showAlert('pwd-alert', 'New password must be at least 12 characters.', 'danger');
+        adminNotify({
+          title: 'Validation Error',
+          message: 'New password must be at least 12 characters.',
+          type: 'warning',
+          containerId: 'pwd-alert'
+        });
         return;
       }
 
       if (newP !== conP) {
-        showAlert('pwd-alert', 'New passwords do not match.', 'danger');
+        adminNotify({
+          title: 'Validation Error',
+          message: 'New password and confirm password do not match.',
+          type: 'warning',
+          containerId: 'pwd-alert'
+        });
         return;
       }
 
@@ -279,7 +301,12 @@
       .then(async res => {
         const data = await res.json();
         if (res.ok) {
-          showAlert('pwd-alert', data.message || 'Password updated successfully! Redirecting to login...', 'success');
+          adminNotify({
+            title: 'Password updated successfully',
+            message: 'Redirecting to login...',
+            type: 'success',
+            containerId: 'pwd-alert'
+          });
           document.getElementById('password-form').reset();
           if (data.requireRelogin) {
             setTimeout(() => {
@@ -287,8 +314,21 @@
             }, 1500);
           }
         } else {
-          showAlert('pwd-alert', data.message || 'Password update failed.', 'danger');
+          adminNotify({
+            title: 'Password update failed',
+            message: data.message || 'Please check your inputs and try again.',
+            type: 'danger',
+            containerId: 'pwd-alert'
+          });
         }
+      })
+      .catch(() => {
+        adminNotify({
+          title: 'Something went wrong',
+          message: 'Please try again.',
+          type: 'danger',
+          containerId: 'pwd-alert'
+        });
       });
     });
 
@@ -308,10 +348,17 @@
     }
 
     function showAlert(id, msg, type) {
-      const box = document.getElementById(id);
-      box.className = 'alert alert-' + type;
-      box.innerHTML = '<i class="fas fa-info-circle"></i> ' + msg;
-      box.style.display = 'flex';
+      let isSuccess = type === 'success';
+      let title = isSuccess ? 'Operation completed successfully' : (type === 'warning' ? 'Validation Warning' : 'Something went wrong');
+      if (typeof msg === 'string' && msg.length > 0) {
+        if (isSuccess) title = msg;
+      }
+      adminNotify({
+        title: title,
+        message: isSuccess ? '' : (msg || 'Please try again.'),
+        type: type,
+        containerId: id
+      });
     }
   </script>
 </body>

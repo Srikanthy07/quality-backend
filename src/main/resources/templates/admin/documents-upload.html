@@ -80,10 +80,6 @@
                 </select>
               </div>
 
-              <div class="form-group">
-                <label for="version">Version *</label>
-                <input type="text" id="version" name="version" class="form-control" value="1.0" required readonly/>
-              </div>
 
               <div class="form-group">
                 <label for="processId">Process ID (e.g. SYS.2, LL, GENERIC) *</label>
@@ -93,6 +89,11 @@
               <div class="form-group">
                 <label for="processGroup">Process Group</label>
                 <input type="text" id="processGroup" name="processGroup" class="form-control" placeholder="e.g. System Engineering Process Group"/>
+              </div>
+
+              <div class="form-group">
+                <label for="version">Doc Version Number *</label>
+                <input type="text" id="version" name="version" class="form-control" value="1.0" placeholder="e.g. 1.0 or 2.1" required/>
               </div>
 
               <div class="form-group form-group-full">
@@ -113,11 +114,16 @@
 
             </div>
 
-            <div id="duplicate-prompt-box" style="display:none; background:#fff7ed; border:1px solid #fdba74; padding:16px; border-radius:8px; margin-top:20px;">
-              <h4 style="color:#c2410c; margin:0 0 8px 0;"><i class="fas fa-exclamation-triangle"></i> Existing Document Found</h4>
-              <p style="margin:0 0 14px 0; font-size:0.9rem; color:#9a3412;">
-                A document with the same <strong>Process ID</strong>, <strong>Category</strong>, and <strong>Document Name</strong> already exists (Current Version: <span id="existing-ver">1.0</span>).
-                <br/>Would you like to upload this file as a <strong>new version</strong>?
+            <div id="duplicate-prompt-box" style="display:none; background:#fff7ed; border:1px solid #fdba74; padding:18px; border-radius:8px; margin-top:20px;">
+              <h4 style="color:#c2410c; margin:0 0 8px 0; font-family:var(--font-head); font-size:1.15rem; font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Existing Document Found</h4>
+              <p style="margin:0 0 8px 0; font-size:0.9rem; color:#9a3412;">
+                A document with the same <strong>Process ID</strong>, <strong>Category</strong>, and <strong>Document Name</strong> already exists.
+              </p>
+              <p style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:#c2410c;">
+                Current Version: <span id="existing-ver">1.0</span>
+              </p>
+              <p style="margin:0 0 16px 0; font-size:0.88rem; color:#9a3412;">
+                The uploaded file has different content. Would you like to upload it as a new version?
               </p>
               <div style="display:flex; gap:10px;">
                 <button type="button" class="btn-teal" onclick="doConfirmVersionUpload()"><i class="fas fa-code-branch"></i> Upload as New Version</button>
@@ -136,6 +142,7 @@
     </div>
   </main>
 
+  <script src="/admin/js/admin-notifications.js"></script>
   <script th:inline="javascript">
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
@@ -170,6 +177,20 @@
         if (catSelect) catSelect.value = catParam;
       }
       onCategoryChange();
+
+      ['category', 'processId', 'documentName', 'version', 'file'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+          input.addEventListener('input', function() { clearFieldValidation(id); });
+          input.addEventListener('change', function() {
+            clearFieldValidation(id);
+            if (id === 'file') {
+              clearAdminNotify();
+              cancelDuplicatePrompt();
+            }
+          });
+        }
+      });
     });
 
     document.getElementById('upload-form').addEventListener('submit', function(e) {
@@ -188,12 +209,57 @@
 
     function executeUpload(confirmNewVersion) {
       const btn = document.getElementById('submit-btn');
-      const alertBox = document.getElementById('alert-box');
-      alertBox.style.display = 'none';
+      clearAdminNotify();
+
+      ['category', 'processId', 'documentName', 'version', 'file'].forEach(clearFieldValidation);
+
+      let isValid = true;
+      let firstInvalidInput = null;
+
+      const category = document.getElementById('category');
+      if (category && (!category.value || !category.value.trim())) {
+        markFieldInvalid('category', 'Please select a category.');
+        isValid = false;
+        if (!firstInvalidInput) firstInvalidInput = category;
+      }
+
+      const processId = document.getElementById('processId');
+      if (processId && (!processId.value || !processId.value.trim())) {
+        markFieldInvalid('processId', 'Process ID is required.');
+        isValid = false;
+        if (!firstInvalidInput) firstInvalidInput = processId;
+      }
+
+      const versionInput = document.getElementById('version');
+      if (versionInput) {
+        const verVal = versionInput.value ? versionInput.value.trim() : '';
+        if (!verVal) {
+          markFieldInvalid('version', 'Document version number is required.');
+          isValid = false;
+          if (!firstInvalidInput) firstInvalidInput = versionInput;
+        } else if (!/^\d+(\.\d+)?$/.test(verVal)) {
+          markFieldInvalid('version', 'Please enter a valid document version number, such as 1.0 or 2.1.');
+          isValid = false;
+          if (!firstInvalidInput) firstInvalidInput = versionInput;
+        }
+      }
+
+      const documentName = document.getElementById('documentName');
+      if (documentName && (!documentName.value || !documentName.value.trim())) {
+        markFieldInvalid('documentName', 'Document name is required.');
+        isValid = false;
+        if (!firstInvalidInput) firstInvalidInput = documentName;
+      }
 
       const fileInput = document.getElementById('file');
-      if (!fileInput.files[0]) {
-        showAlert('Please choose a file to upload.', 'danger');
+      if (fileInput && (!fileInput.files || !fileInput.files[0])) {
+        markFieldInvalid('file', 'Please select a document to upload.');
+        isValid = false;
+        if (!firstInvalidInput) firstInvalidInput = fileInput;
+      }
+
+      if (!isValid) {
+        if (firstInvalidInput) firstInvalidInput.focus();
         return;
       }
 
@@ -218,33 +284,70 @@
         btn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
 
         if (res.status === 300 || data.action === 'DUPLICATE_PROMPT') {
-          document.getElementById('existing-ver').textContent = data.version || '1.0';
+          const currentVerStr = data.version || '1.0';
+          document.getElementById('existing-ver').textContent = currentVerStr;
+
+          const verInput = document.getElementById('version');
+          if (verInput && verInput.value === '1.0') {
+            const parts = currentVerStr.split('.');
+            const maj = parseInt(parts[0]) || 1;
+            const min = parseInt(parts[1]) || 0;
+            verInput.value = maj + '.' + (min + 1);
+          }
+
           document.getElementById('duplicate-prompt-box').style.display = 'block';
           document.getElementById('form-actions').style.display = 'none';
           return;
         }
 
         if (res.ok && data.success) {
-          showAlert(data.message || 'Document uploaded successfully! Redirecting...', 'success');
+          const isVersioned = data.action === 'VERSIONED' || (data.version && data.version !== '1.0');
+          const titleMsg = isVersioned 
+            ? `New version v${data.version} uploaded successfully` 
+            : 'Document uploaded successfully';
+          const bodyMsg = isVersioned 
+            ? 'The new version has been submitted for approval.' 
+            : (data.message || 'Redirecting to documents list...');
+
+          adminNotify({
+            title: titleMsg,
+            message: bodyMsg,
+            type: 'success'
+          });
           setTimeout(() => {
             window.location.href = '/admin/documents';
-          }, 1200);
+          }, 1500);
+        } else if (res.status === 409 || (data.message && data.message.toLowerCase().includes('duplicate'))) {
+          adminNotify({
+            title: data.message || 'Duplicate file detected',
+            message: data.details || 'This document already exists with the same file content. Please choose a different file or upload a new version.',
+            type: 'warning'
+          });
+        } else if (res.status === 401 || res.status === 403) {
+          adminNotify({
+            title: 'Session Expired',
+            message: data.message || 'Your session has expired. Please log in again.',
+            type: 'warning'
+          });
         } else {
-          showAlert(data.message || 'Duplicate document already exists.', 'danger');
+          const errTitle = data.message || 'Upload failed';
+          const errMsg = data.details || data.message || 'Unable to upload the document. Please try again.';
+          adminNotify({
+            title: errTitle,
+            message: errMsg,
+            type: 'danger'
+          });
         }
       })
       .catch(err => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
-        showAlert('An error occurred during upload: ' + err.message, 'danger');
+        adminNotify({
+          title: 'Upload failed',
+          message: 'Unable to upload the document. Please try again.',
+          type: 'danger'
+        });
       });
-    }
-
-    function showAlert(msg, type) {
-      const alertBox = document.getElementById('alert-box');
-      alertBox.className = 'alert alert-' + type;
-      alertBox.innerHTML = '<i class="fas fa-info-circle"></i> ' + msg;
-      alertBox.style.display = 'flex';
     }
   </script>
 </body>

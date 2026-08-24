@@ -60,10 +60,19 @@ public class DmsMigrationService {
                 if (existingMasterOpt.isPresent() || documentVersionRepository.findFirstByFileNameIgnoreCase(targetFileName).isPresent()) {
                     if (existingMasterOpt.isPresent()) {
                         DocumentMaster master = existingMasterOpt.get();
-                        if ((master.getDescription() == null || master.getDescription().trim().isEmpty())
-                                && legacy.getDescription() != null && !legacy.getDescription().trim().isEmpty()) {
-                            master.setDescription(legacy.getDescription().trim());
+                        String legVer = legacy.getVersion() != null ? legacy.getVersion() : "1.0";
+                        if (!legVer.equals(master.getCurrentVersion())) {
+                            master.setCurrentVersion(legVer);
                             documentMasterRepository.save(master);
+
+                            int[] parts = parseVersion(legVer);
+                            Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
+                            if (latestOpt.isPresent()) {
+                                DocumentVersion dv = latestOpt.get();
+                                dv.setMajorVersion(parts[0]);
+                                dv.setMinorVersion(parts[1]);
+                                documentVersionRepository.save(dv);
+                            }
                         }
                     }
                     continue; // Already migrated/seeded
@@ -82,6 +91,8 @@ public class DmsMigrationService {
                 String processId = (legacy.getProcess() != null && !legacy.getProcess().isEmpty()) ? legacy.getProcess() : "GLOBAL";
                 String category = (legacy.getCategory() != null && !legacy.getCategory().isEmpty()) ? legacy.getCategory() : "ASPICE PRM";
                 String docName = (legacy.getDocumentName() != null && !legacy.getDocumentName().isEmpty()) ? legacy.getDocumentName() : "Document";
+                String legVer = legacy.getVersion() != null ? legacy.getVersion() : "1.0";
+                int[] verParts = parseVersion(legVer);
 
                 DocumentMaster master = DocumentMaster.builder()
                         .documentCode(code)
@@ -91,7 +102,7 @@ public class DmsMigrationService {
                         .category(category)
                         .documentName(docName)
                         .description(legacy.getDescription())
-                        .currentVersion(legacy.getVersion() != null ? legacy.getVersion() : "1.0")
+                        .currentVersion(legVer)
                         .status("APPROVED")
                         .createdBy(legacy.getCreatedBy() != null ? legacy.getCreatedBy() : "system")
                         .createdDate(legacy.getCreatedAt() != null ? legacy.getCreatedAt() : LocalDateTime.now())
@@ -102,8 +113,9 @@ public class DmsMigrationService {
 
                 DocumentVersion version = DocumentVersion.builder()
                         .documentMaster(master)
-                        .majorVersion(1)
-                        .minorVersion(0)
+                        .version(legVer)
+                        .majorVersion(verParts[0])
+                        .minorVersion(verParts[1])
                         .fileName(legacy.getFileName() != null ? legacy.getFileName() : (docName + "." + fileExt.toLowerCase()))
                         .fileType(fileExt)
                         .fileSize((long) fileBytes.length)
@@ -175,6 +187,21 @@ public class DmsMigrationService {
         } catch (Exception ignored) {}
 
         return null;
+    }
+
+    private int[] parseVersion(String versionStr) {
+        if (versionStr == null || versionStr.trim().isEmpty()) {
+            return new int[]{1, 0};
+        }
+        String trimmed = versionStr.trim();
+        String[] parts = trimmed.split("\\.");
+        try {
+            int major = Integer.parseInt(parts[0]);
+            int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            return new int[]{major, minor};
+        } catch (NumberFormatException e) {
+            return new int[]{1, 0};
+        }
     }
 
     private String getExtension(String fileName) {

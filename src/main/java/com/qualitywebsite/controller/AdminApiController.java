@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -79,19 +80,20 @@ public class AdminApiController {
 
     @PostMapping("/dms/upload")
     public ResponseEntity<?> uploadDmsDocument(
-            @RequestParam(value = "category", required = false, defaultValue = "ASPICE PRM") String category,
-            @RequestParam(value = "processGroup", required = false, defaultValue = "General") String processGroup,
-            @RequestParam(value = "processId", required = false, defaultValue = "GLOBAL") String processId,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "processGroup", required = false) String processGroup,
+            @RequestParam(value = "processId", required = false) String processId,
             @RequestParam(value = "processName", required = false) String processName,
             @RequestParam(value = "documentName", required = false) String documentName,
+            @RequestParam(value = "version", required = false) String version,
             @RequestParam(value = "remarks", required = false) String remarks,
             @RequestParam(value = "confirmNewVersion", required = false, defaultValue = "false") boolean confirmNewVersion,
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             Authentication auth) {
 
         try {
             UploadResponseDTO response = dmsDocumentService.uploadDocument(
-                    file, category, processGroup, processId, processName, documentName, remarks, getUsername(auth), confirmNewVersion
+                    file, category, processGroup, processId, processName, documentName, version, remarks, getUsername(auth), confirmNewVersion
             );
 
             if ("REJECTED".equalsIgnoreCase(response.getAction())) {
@@ -103,16 +105,23 @@ public class AdminApiController {
 
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        } catch (IOException e) {
+            log.warn("[AdminApiController] Document upload validation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        } catch (MaxUploadSizeExceededException e) {
+            log.warn("[AdminApiController] Max upload size exceeded: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(Map.of("success", false, "message", "The selected file exceeds the maximum allowed file size.", "details", "File size exceeds the maximum allowed limit of 50 MB."));
+        } catch (Exception e) {
+            log.error("[AdminApiController] Unexpected document upload failure: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "File upload failed: " + e.getMessage()));
+                    .body(Map.of("success", false, "message", "Unable to upload the document. Please try again."));
         }
     }
 
     @PostMapping("/dms/documents/{id}/version")
     public ResponseEntity<?> uploadDmsNewVersion(
             @PathVariable Long id,
+            @RequestParam(value = "version", required = false) String version,
             @RequestParam(value = "remarks", required = false) String remarks,
             @RequestParam("file") MultipartFile file,
             Authentication auth) {
@@ -122,7 +131,7 @@ public class AdminApiController {
             String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf(".") + 1).toUpperCase() : "DOC";
             String mimeType = resolveMimeFromExt(ext, file.getContentType());
 
-            UploadResponseDTO response = dmsDocumentService.uploadNewVersion(id, bytes, originalName, ext, mimeType, remarks, getUsername(auth));
+            UploadResponseDTO response = dmsDocumentService.uploadNewVersion(id, bytes, originalName, ext, mimeType, version, remarks, getUsername(auth));
             if (!response.isSuccess()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
             }
@@ -131,10 +140,16 @@ public class AdminApiController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("status", 409, "error", "Conflict", "message", e.getMessage()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        } catch (IOException e) {
+            log.warn("[AdminApiController] Version upload validation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        } catch (MaxUploadSizeExceededException e) {
+            log.warn("[AdminApiController] Max upload size exceeded: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(Map.of("success", false, "message", "The selected file exceeds the maximum allowed file size.", "details", "File size exceeds the maximum allowed limit of 50 MB."));
+        } catch (Exception e) {
+            log.error("[AdminApiController] Unexpected version upload failure: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Version upload failed: " + e.getMessage()));
+                    .body(Map.of("success", false, "message", "Unable to upload the document. Please try again."));
         }
     }
 

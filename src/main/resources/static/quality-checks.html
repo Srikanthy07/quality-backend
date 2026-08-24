@@ -15,103 +15,179 @@
   <link rel="stylesheet" href="/css/responsive-flow.css?v=2"/>
     
   <style>
-    /* ── Page shell ── */
-    .qc-page { min-height: 100vh; background: var(--off-white, #f5f7fa); padding-bottom: 60px; }
+    /* ── Page shell (Clean White Content Area with 68px Fixed Navbar Offset) ── */
+    .qc-page { min-height: 100vh; background: #ffffff !important; padding-top: 68px; padding-bottom: 60px; }
 
-    /* ── Hero strip ── */
+    /* ── Navbar matching dark navy theme ── */
+    .navbar {
+      background: var(--navy, #0d2b45) !important;
+      border-bottom: 2px solid var(--teal, #00aabb);
+    }
+
+    /* ── Hero strip (Clean White Background & 2-Column Grid Layout) ── */
     .qc-hero {
-      background: linear-gradient(135deg, var(--navy,#0d2b45) 0%, var(--navy-mid,#163a5f) 60%, #0f3460 100%);
-      border-bottom: 3px solid var(--teal,#00aabb);
-      padding: 40px 0 36px;
+      background: #ffffff !important;
+      border-bottom: none !important;
+      padding: 28px 0 12px;
     }
-    .qc-hero__inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--c-pad, 24px); }
+    .qc-hero__inner { max-width: 1400px; margin: 0 auto; padding: 0 50px; }
 
-    /* ── Back button ── */
-    .qc-back {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 18px; border-radius: 6px;
-      border: 1.5px solid rgba(255,255,255,.28);
-      background: rgba(255,255,255,.07);
-      color: rgba(255,255,255,.82); font-size: .83rem; font-weight: 600;
-      cursor: pointer; text-decoration: none;
-      transition: background .18s, border-color .18s, color .18s;
-      margin-bottom: 24px;
-    }
-    .qc-back:hover { background: rgba(0,170,187,.18); border-color: var(--teal,#00aabb); color: #fff; }
-    .qc-back svg { width: 14px; height: 14px; }
+    /* ── Hide back button ── */
+    .qc-back { display: none !important; }
 
-    /* ── Tab switcher ── */
-    .qc-tabs {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px;
-    }
-    .qc-tab {
-      padding: 9px 22px; border-radius: 7px; border: 1.5px solid rgba(255,255,255,.22);
-      background: rgba(255,255,255,.08); color: rgba(255,255,255,.7);
-      font-size: .85rem; font-weight: 700; cursor: pointer; letter-spacing: .03em;
-      text-decoration: none; transition: background .18s, border-color .18s, color .18s;
-    }
-    .qc-tab:hover { background: rgba(255,255,255,.14); color: #fff; }
-    .qc-tab.active-proj,
-    .qc-tab.active-sys,
-    .qc-tab.active-sw {
-      background: var(--teal,#00aabb); border-color: var(--teal,#00aabb); color: #fff;
+    /* ── Hero 2-Column Grid Layout ── */
+    .qc-hero__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 36px;
     }
 
-    /* ── Hero title area ── */
-    .qc-hero__title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .qc-hero__left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ── Prominent Category Badge (#qc-badge: Project / System / Software) ── */
     .qc-hero__badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 6px 14px; border-radius: 7px;
-      font-family: var(--font-head,'Barlow Condensed',sans-serif);
-      font-size: .8rem; font-weight: 800; color: #fff; letter-spacing: .06em;
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      width: fit-content;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: .78rem;
+      font-weight: 800;
+      color: #00aabb;
+      letter-spacing: .08em;
       text-transform: uppercase;
-      background: rgba(255,255,255,.14);
-      border: 1px solid rgba(255,255,255,.28);
+      background: #f5fbfd;
+      border: 1px solid #00aabb;
+      margin-bottom: 12px;
     }
     .qc-hero__badge--proj,
     .qc-hero__badge--sys,
     .qc-hero__badge--sw {
-      background: rgba(255,255,255,.14);
-      border: 1px solid rgba(255,255,255,.28);
+      background: #f5fbfd;
+      border: 1px solid #00aabb;
+      color: #00aabb;
     }
+
     .qc-hero__h1 {
-      font-family: var(--font-head,'Barlow Condensed',sans-serif);
-      font-size: clamp(1.5rem,3vw,2.1rem); font-weight: 800; color: #fff; margin: 0;
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+      font-weight: 800;
+      color: var(--navy, #0d2b45);
+      margin: 0 0 10px 0;
+      line-height: 1.2;
     }
-    .qc-hero__sub { margin-top: 8px; font-size: .88rem; color: rgba(255,255,255,.6); }
+    .qc-hero__sub {
+      margin: 0;
+      font-size: .95rem;
+      color: #475569;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    /* ── Right Column: Quality Gate Type Selector Label & Segmented Control ── */
+    .qc-hero__right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .qc-selector-label {
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--navy, #0d2b45);
+      margin-bottom: 8px;
+      text-align: right;
+    }
+
+    /* ── White Segmented Control Tab Switcher ── */
+    .qc-tabs.qc-segmented-control {
+      display: inline-flex;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 4px;
+      gap: 4px;
+      margin-top: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .qc-tabs.qc-segmented-control .qc-tab {
+      padding: 7px 18px;
+      border-radius: 6px;
+      border: none;
+      background: #ffffff;
+      color: var(--navy, #0d2b45) !important;
+      font-size: .83rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .02em;
+      text-decoration: none;
+      transition: background 0.18s, color 0.18s;
+      white-space: nowrap;
+    }
+
+    .qc-tabs.qc-segmented-control .qc-tab:hover {
+      background: #f1f5f9;
+      color: var(--navy, #0d2b45) !important;
+    }
+
+    .qc-tabs.qc-segmented-control .qc-tab.active-proj,
+    .qc-tabs.qc-segmented-control .qc-tab.active-sys,
+    .qc-tabs.qc-segmented-control .qc-tab.active-sw {
+      background: var(--teal, #00aabb) !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 6px rgba(0, 170, 187, 0.3);
+    }
 
     /* ── Content wrapper ── */
-    .qc-content { max-width: var(--container-max); margin: 32px auto 0; padding: 0 var(--c-pad, 24px); }
-
+    .qc-content {
+    max-width: 1400px;
+    margin: 12px auto 0;
+    padding: 0 42px;
+}
     /* ── Section visibility ── */
     .qc-section { display: none; }
     .qc-section.visible { display: block; }
 
-    /* ── Gate content card ── */
+    /* ── Gate content card & Outer Container Removal ── */
     .qc-card {
-      background: #fff; border-radius: 14px;
-      box-shadow: 0 2px 16px rgba(0,0,0,.07); overflow: hidden;
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      overflow: visible !important;
     }
 
-    /* Wrap existing qg-root so it gets padding */
-    .qc-gate-wrap { padding: 24px; }
+    /* Wrap existing qg-root without outer container padding */
+    .qc-gate-wrap { padding: 0 !important; }
 
-    /* ── Muted, professional banner & body (override bright homepage colors for this page only) ── */
+    .qg-tier:hover .qg-body {
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    /* ── Hide secondary section banner header ── */
     .qc-gate-wrap .qg-banner {
-      background: var(--navy,#0d2b45) !important;
-      position: relative;
+      display: none !important;
     }
-    .qc-gate-wrap .qg-banner::before {
-      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
-    }
-    .qc-gate-wrap .qg-banner--proj::before { background: #0891b2; }
-    .qc-gate-wrap .qg-banner--sys::before  { background: #3b5bdb; }
-    .qc-gate-wrap .qg-banner--sw::before   { background: #8b5cf6; }
 
     .qc-gate-wrap .qg-body--proj,
     .qc-gate-wrap .qg-body--sys,
     .qc-gate-wrap .qg-body--sw {
-      background: #fafbfc !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
     }
 
     /* ── Not found ── */
@@ -125,12 +201,144 @@
     }
     .qc-not-found p { color: #6b7f94; margin-bottom: 24px; }
 
-    @media (max-width: 640px) {
-      .qc-hero { padding: 24px 0 20px; }
-      .qc-hero__inner, .qc-content { padding: 0 14px; }
-      .qc-tabs { gap: 6px; }
-      .qc-tab { padding: 8px 14px; font-size: .8rem; }
-      .qc-gate-wrap { padding: 14px; }
+    /* ── Clean Section Title & Quality Checks Cards ── */
+    .qc-gate-wrap .qg-namebox {
+      margin-top: 0;
+    }
+    .qc-gate-wrap .qg-namebox__title {
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--navy, #0d2b45);
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .qc-gate-wrap .qg-namebox__title::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 18px;
+      background: var(--teal, #00aabb);
+      border-radius: 2px;
+    }
+    .qc-gate-wrap .qg-namebox__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+    }
+    .qc-gate-wrap .qg-namebox__item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-top: 3px solid var(--teal, #00aabb);
+      border-radius: 12px;
+      padding: 22px 22px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+      box-shadow: 0 2px 10px rgba(13, 43, 69, 0.04);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      height: 100%;
+      min-height: 0;
+    }
+    .qc-gate-wrap .qg-namebox__item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(13, 43, 69, 0.08);
+      border-color: #cbd5e1;
+      border-top-color: var(--teal, #00aabb);
+    }
+    /* Quality Gate Stage Code Badge (Light Cyan Pill) */
+    .qc-gate-wrap .qg-namebox__item strong {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: flex-start;
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: 0.95rem !important;
+      font-weight: 800;
+      color: var(--navy, #0d2b45);
+      background: #d4f3f7;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 12px;
+      margin-bottom: 14px;
+      letter-spacing: .06em;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .qc-gate-wrap .qg-namebox__item:hover strong {
+      background: var(--teal, #00aabb);
+      color: #ffffff;
+    }
+    /* Quality Gate Title */
+    .qc-gate-wrap .qg-namebox__item span {
+      font-family: var(--font-head, 'Barlow Condensed', sans-serif);
+      font-size: 1.05rem !important;
+      font-weight: 700;
+      color: var(--navy, #0d2b45);
+      letter-spacing: .01em;
+      line-height: 1.35;
+      margin-bottom: 12px;
+      display: block;
+    }
+    /* Quality Gate Description */
+    .qc-gate-wrap .qg-namebox__item p {
+      font-family: var(--font-body, 'Barlow', sans-serif);
+      font-size: 0.85rem !important;
+      font-weight: 400;
+      color: #475569;
+      line-height: 1.65;
+      letter-spacing: .005em;
+      margin: 0;
+      flex-grow: 1;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1024px) and (min-width: 641px) {
+      .qc-gate-wrap .qg-namebox__grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+      }
+    }
+    @media (max-width: 820px) {
+      .qc-hero { padding: 20px 0 18px; }
+      .qc-hero__inner, .qc-content { padding: 0 16px; }
+      .qc-hero__grid {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .qc-hero__right {
+        align-items: flex-start;
+        width: 100%;
+      }
+      .qc-selector-label {
+        text-align: left;
+      }
+      .qc-tabs.qc-segmented-control {
+        width: 100%;
+        display: flex;
+      }
+      .qc-tabs.qc-segmented-control .qc-tab {
+        flex: 1;
+        text-align: center;
+        padding: 7px 8px;
+        font-size: 0.8rem;
+      }
+      .qc-gate-wrap { padding: 0; }
+      .qc-gate-wrap .qg-namebox__grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .qc-gate-wrap .qg-namebox__item {
+        padding: 18px 18px 20px;
+      }
     }
   </style>
 </head>
@@ -211,17 +419,23 @@
         Back to Quality Gates
       </a>
 
-      <div class="qc-hero__title-row">
-        <span class="qc-hero__badge" id="qc-badge">Gates</span>
-        <h1 class="qc-hero__h1" id="qc-title">Quality Gate Checks</h1>
-      </div>
-      <p class="qc-hero__sub" id="qc-sub">Select a gate type below to view the detailed quality checks.</p>
+      <div class="qc-hero__grid">
+        <!-- LEFT COLUMN: Badge, Title, Description -->
+        <div class="qc-hero__left">
+          <span class="qc-hero__badge" id="qc-badge">Project</span>
+          <h1 class="qc-hero__h1" id="qc-title">Project Quality Gates</h1>
+          <p class="qc-hero__sub" id="qc-sub">Project-level quality gates from initiation through closure.</p>
+        </div>
 
-      <!-- Tab switcher -->
-      <div class="qc-tabs">
-        <a href="quality-checks.html?type=project"  class="qc-tab" id="tab-project">&#9679; Project</a>
-        <a href="quality-checks.html?type=system"   class="qc-tab" id="tab-system">&#9679; System</a>
-        <a href="quality-checks.html?type=software" class="qc-tab" id="tab-software">&#9679; Software</a>
+        <!-- RIGHT COLUMN: Segmented Control Tab Switcher -->
+        <div class="qc-hero__right">
+          <div class="qc-selector-label">Quality Gate Type</div>
+          <div class="qc-tabs qc-segmented-control">
+            <a href="quality-checks.html?type=project"  class="qc-tab" id="tab-project">&#9679; Project</a>
+            <a href="quality-checks.html?type=system"   class="qc-tab" id="tab-system">&#9679; System</a>
+            <a href="quality-checks.html?type=software" class="qc-tab" id="tab-software">&#9679; Software</a>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -236,7 +450,6 @@
         <div class="qc-gate-wrap">
           <div class="qg-root">
             <div class="qg-tier">
-              <div class="qg-banner qg-banner--proj">IAST Project Quality Gates</div>
               <div class="qg-body qg-body--proj">
                 
                 
@@ -288,7 +501,6 @@
         <div class="qc-gate-wrap">
           <div class="qg-root">
             <div class="qg-tier">
-              <div class="qg-banner qg-banner--sys">IAST System Quality Gate</div>
               <div class="qg-body qg-body--sys">
                 
                 <div class="qg-namebox">
@@ -339,7 +551,6 @@
         <div class="qc-gate-wrap">
           <div class="qg-root">
             <div class="qg-tier">
-              <div class="qg-banner qg-banner--sw">IAST SW Quality Gate</div>
               <div class="qg-body qg-body--sw">
                 
                 <div class="qg-namebox">

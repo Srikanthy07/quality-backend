@@ -220,8 +220,12 @@
             Uploading a new version will store the new file as a LONGBLOB, increment the version (e.g. 1.0 &rarr; 1.1), and preserve all historical revisions.
           </p>
           <div class="form-group">
-            <label for="version-file-input">Choose Revised File</label>
+            <label for="version-file-input">Choose Revised File *</label>
             <input type="file" id="version-file-input" class="form-control" required/>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label for="version-number-input">Doc Version Number *</label>
+            <input type="text" id="version-number-input" class="form-control" placeholder="e.g. 1.1 or 2.0"/>
           </div>
           <div class="form-group" style="margin-top:12px;">
             <label for="version-remarks">Revision Remarks</label>
@@ -341,6 +345,7 @@
     </div>
   </div>
 
+  <script src="/admin/js/admin-notifications.js"></script>
   <script th:inline="javascript">
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
@@ -514,7 +519,7 @@
           actionButtons = `
             <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
             <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
-            <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id})"><i class="fas fa-cloud-upload-alt"></i></button>
+            <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id}, '${escapeHtml(d.currentVersion || '1.0')}')"><i class="fas fa-cloud-upload-alt"></i></button>
             <button class="action-btn" title="Edit Details" onclick="openEditModal(${d.id})"><i class="fas fa-edit"></i></button>
             <button class="action-btn" title="Approve" style="color:#16a34a;" onclick="approveDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-check-circle"></i></button>
             <button class="action-btn delete" title="Reject" onclick="rejectDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-times-circle"></i></button>
@@ -524,7 +529,7 @@
           actionButtons = `
             <a class="action-btn" title="Download" href="${downloadUrl}" download><i class="fas fa-download"></i></a>
             <button class="action-btn" title="Version History" onclick="openHistoryModal(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-history"></i></button>
-            <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id})"><i class="fas fa-cloud-upload-alt"></i></button>
+            <button class="action-btn" title="Upload New Version" onclick="openVersionModal(${d.id}, '${escapeHtml(d.currentVersion || '1.0')}')"><i class="fas fa-cloud-upload-alt"></i></button>
             <button class="action-btn" title="Edit Details" onclick="openEditModal(${d.id})"><i class="fas fa-edit"></i></button>
             <button class="action-btn delete" title="Archive / Delete" onclick="deleteDoc(${d.id}, '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
           `;
@@ -619,25 +624,71 @@
       .catch(() => showErrorToast('Network error. Please try again.'));
     }
 
-    function openVersionModal(id) {
+    function openVersionModal(id, currentVer) {
       document.getElementById('version-doc-id').value = id;
       document.getElementById('version-file-input').value = '';
       document.getElementById('version-remarks').value = '';
+      clearFieldValidation('version-file-input');
+      clearFieldValidation('version-number-input');
+
+      const verInput = document.getElementById('version-number-input');
+      if (verInput) {
+        const cVer = currentVer || '1.0';
+        const parts = cVer.split('.');
+        const maj = parseInt(parts[0]) || 1;
+        const min = parseInt(parts[1]) || 0;
+        verInput.value = maj + '.' + (min + 1);
+      }
+
       document.getElementById('version-modal').classList.add('active');
+
+      const fileInput = document.getElementById('version-file-input');
+      if (fileInput && !fileInput.dataset.listener) {
+        fileInput.dataset.listener = 'true';
+        fileInput.addEventListener('change', function() {
+          if (this.files && this.files[0]) {
+            clearFieldValidation('version-file-input');
+          }
+        });
+      }
+      if (verInput && !verInput.dataset.listener) {
+        verInput.dataset.listener = 'true';
+        verInput.addEventListener('input', function() {
+          clearFieldValidation('version-number-input');
+        });
+      }
     }
 
     function submitVersionForm() {
       const id = document.getElementById('version-doc-id').value;
       const fileInput = document.getElementById('version-file-input');
+      const versionInput = document.getElementById('version-number-input');
       const remarks   = document.getElementById('version-remarks').value;
 
-      if (!fileInput.files[0]) {
-        alert('Please select a file to upload.');
+      clearFieldValidation('version-file-input');
+      clearFieldValidation('version-number-input');
+
+      if (!fileInput.files || !fileInput.files[0]) {
+        markFieldInvalid('version-file-input', 'Please select a document to upload.');
+        fileInput.focus();
+        return;
+      }
+
+      const verVal = versionInput ? versionInput.value.trim() : '';
+      if (!verVal) {
+        markFieldInvalid('version-number-input', 'Document version number is required.');
+        versionInput.focus();
+        return;
+      }
+      if (!/^\d+(\.\d+)?$/.test(verVal)) {
+        markFieldInvalid('version-number-input', 'Please enter a valid document version number, such as 1.0 or 2.1.');
+        versionInput.focus();
         return;
       }
 
       const formData = new FormData();
       formData.append('file', fileInput.files[0]);
+      formData.append('version', verVal);
       formData.append('remarks', remarks);
 
       fetch(`/api/admin/dms/documents/${id}/version`, {
@@ -649,7 +700,12 @@
         const data = await res.json();
         if (res.ok && data.success) {
           closeModal('version-modal');
-          showSuccessMsg(data.message);
+          const verStr = data.version ? `v${data.version} ` : '';
+          adminNotify({
+            title: `New version ${verStr}uploaded successfully`,
+            message: 'The new version has been submitted for approval.',
+            type: 'success'
+          });
           loadDocuments();
         } else if (res.status === 409) {
           closeModal('version-modal');
@@ -658,10 +714,10 @@
           );
           loadDocuments();
         } else {
-          alert(data.message || 'Failed to upload new version.');
+          showErrorToast(data.message || 'Failed to upload new version.', data.details);
         }
       })
-      .catch(err => alert('Upload failed: ' + err.message));
+      .catch(err => showErrorToast('Upload failed. Please try again.'));
     }
 
     function openHistoryModal(id, docName) {
@@ -928,67 +984,33 @@
       });
     });
 
-    // ---- Conflict toast helpers ----
-    function showConflictToast(message) {
-      const toast = document.getElementById('conflict-toast');
-      const msg   = document.getElementById('conflict-toast-msg');
-      msg.textContent = message || 'This document was modified by another administrator. Please refresh before saving again.';
-      toast.classList.add('visible');
-      setTimeout(dismissToast, 8000);
-    }
-    function dismissToast() {
-      document.getElementById('conflict-toast').classList.remove('visible');
+    // ---- Unified Toast & Notification Handlers ----
+    function showConflictToast(msg) {
+      adminNotify({
+        title: 'Concurrent Modification Warning',
+        message: msg || 'This document was modified by another administrator. Please refresh and verify.',
+        type: 'warning',
+        autoDismiss: 6000
+      });
     }
 
-    function showErrorToast(msg) {
-      const toast = document.getElementById('conflict-toast');
-      const msgEl = document.getElementById('conflict-toast-msg');
-      toast.style.background = '#fee2e2';
-      toast.style.borderColor = '#ef4444';
-      const icon = toast.querySelector('i');
-      if (icon) {
-        icon.className = 'fas fa-exclamation-circle';
-        icon.style.color = '#dc2626';
-      }
-      msgEl.style.color = '#991b1b';
-      msgEl.textContent = msg || 'An error occurred. Please try again.';
-      toast.classList.add('visible');
-      setTimeout(() => {
-        dismissToast();
-        toast.style.background = '';
-        toast.style.borderColor = '';
-        if (icon) {
-          icon.className = 'fas fa-exclamation-triangle';
-          icon.style.color = '';
-        }
-        msgEl.style.color = '';
-      }, 5000);
+    function showErrorToast(msg, details) {
+      const errTitle = details ? (msg || 'Upload failed') : 'Upload failed';
+      const errMsg = details || msg || 'Unable to save the document. Please try again.';
+      adminNotify({
+        title: errTitle,
+        message: errMsg,
+        type: 'danger',
+        autoDismiss: 5000
+      });
     }
 
-    // ---- Transient success message ----
     function showSuccessMsg(msg) {
-      const toast = document.getElementById('conflict-toast');
-      const msgEl = document.getElementById('conflict-toast-msg');
-      toast.style.background = '#dcfce7';
-      toast.style.borderColor = '#22c55e';
-      const icon = toast.querySelector('i');
-      if (icon) {
-        icon.className = 'fas fa-check-circle';
-        icon.style.color = '#15803d';
-      }
-      msgEl.style.color = '#14532d';
-      msgEl.textContent = msg || 'Operation completed successfully.';
-      toast.classList.add('visible');
-      setTimeout(() => {
-        dismissToast();
-        toast.style.background = '';
-        toast.style.borderColor = '';
-        if (icon) {
-          icon.className = 'fas fa-exclamation-triangle';
-          icon.style.color = '';
-        }
-        msgEl.style.color = '';
-      }, 5000);
+      adminNotify({
+        title: msg || 'Operation completed successfully.',
+        type: 'success',
+        autoDismiss: 4000
+      });
     }
 
     function closeModal(modalId) {

@@ -3,8 +3,12 @@ package com.qualitywebsite.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qualitywebsite.entity.DocumentEntity;
+import com.qualitywebsite.entity.DocumentMaster;
+import com.qualitywebsite.entity.DocumentVersion;
 import com.qualitywebsite.entity.MasterListItem;
+import com.qualitywebsite.repository.DocumentMasterRepository;
 import com.qualitywebsite.repository.DocumentRepository;
+import com.qualitywebsite.repository.DocumentVersionRepository;
 import com.qualitywebsite.repository.MasterListItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +36,8 @@ public class DataInitializationService {
 
     private final DocumentRepository documentRepository;
     private final MasterListItemRepository masterListItemRepository;
+    private final DocumentMasterRepository documentMasterRepository;
+    private final DocumentVersionRepository documentVersionRepository;
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
     private final ActivityLogService activityLogService;
@@ -101,7 +107,35 @@ public class DataInitializationService {
                 // avoids overwriting metadata that was already correctly set.
                 if (existingByPath.containsKey(normalizedFilePath)) {
                     totalSkippedExisting++;
-                    log.debug("Skipping already-recorded document: {}", normalizedFilePath);
+                    DocumentEntity existingDoc = existingByPath.get(normalizedFilePath);
+                    Map<String, Object> metadata = metadataByPath.get(normalizedFilePath);
+                    if (metadata != null && metadata.get("version") != null) {
+                        String metaVer = (String) metadata.get("version");
+                        if (!metaVer.equals(existingDoc.getVersion())) {
+                            log.info("[Version Reconciliation] Updating version for {} from {} to {}", existingDoc.getDocumentName(), existingDoc.getVersion(), metaVer);
+                            existingDoc.setVersion(metaVer);
+                            documentRepository.save(existingDoc);
+
+                            Optional<DocumentMaster> masterOpt = documentMasterRepository
+                                    .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+                                            existingDoc.getProcess(), existingDoc.getCategory(), existingDoc.getDocumentName()
+                                    );
+                            if (masterOpt.isPresent()) {
+                                DocumentMaster master = masterOpt.get();
+                                master.setCurrentVersion(metaVer);
+                                documentMasterRepository.save(master);
+
+                                int[] parts = parseVersion(metaVer);
+                                Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
+                                if (latestOpt.isPresent()) {
+                                    DocumentVersion dv = latestOpt.get();
+                                    dv.setMajorVersion(parts[0]);
+                                    dv.setMinorVersion(parts[1]);
+                                    documentVersionRepository.save(dv);
+                                }
+                            }
+                        }
+                    }
                     continue;
                 }
 
@@ -624,5 +658,20 @@ public class DataInitializationService {
             case "PIM.3" -> "Process Improvement";
             default -> processId;
         };
+    }
+
+    private int[] parseVersion(String versionStr) {
+        if (versionStr == null || versionStr.trim().isEmpty()) {
+            return new int[]{1, 0};
+        }
+        String trimmed = versionStr.trim();
+        String[] parts = trimmed.split("\\.");
+        try {
+            int major = Integer.parseInt(parts[0]);
+            int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            return new int[]{major, minor};
+        } catch (NumberFormatException e) {
+            return new int[]{1, 0};
+        }
     }
 }

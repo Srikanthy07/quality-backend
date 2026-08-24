@@ -218,23 +218,35 @@
 
     <div class="login-body">
       <div th:if="${param.error}" class="alert alert-danger">
-        <i class="fas fa-exclamation-circle"></i>
-        <span>Invalid username or password. Please try again.</span>
+        <i class="fas fa-times-circle admin-alert__icon"></i>
+        <div class="admin-alert__content">
+          <div class="admin-alert__title">Authentication Failed</div>
+          <div class="admin-alert__body">Invalid username or password. Please try again.</div>
+        </div>
       </div>
 
       <div th:if="${param.expired}" class="alert alert-danger">
-        <i class="fas fa-exclamation-circle"></i>
-        <span>Your session has expired. Please log in again.</span>
+        <i class="fas fa-exclamation-triangle admin-alert__icon"></i>
+        <div class="admin-alert__content">
+          <div class="admin-alert__title">Session Expired</div>
+          <div class="admin-alert__body">Your session has expired. Please log in again.</div>
+        </div>
       </div>
 
       <div th:if="${param.evicted}" class="alert alert-danger">
-        <i class="fas fa-exclamation-circle"></i>
-        <span>Your session has expired because your account was logged in from another location. Please log in again.</span>
+        <i class="fas fa-exclamation-triangle admin-alert__icon"></i>
+        <div class="admin-alert__content">
+          <div class="admin-alert__title">Session Evicted</div>
+          <div class="admin-alert__body">Your session has expired because your account was logged in from another location. Please log in again.</div>
+        </div>
       </div>
 
       <div th:if="${param.logout}" class="alert alert-success">
-        <i class="fas fa-check-circle"></i>
-        <span>You have been logged out successfully.</span>
+        <i class="fas fa-check-circle admin-alert__icon"></i>
+        <div class="admin-alert__content">
+          <div class="admin-alert__title">Logged Out</div>
+          <div class="admin-alert__body">You have been logged out successfully.</div>
+        </div>
       </div>
 
       <form th:action="@{/admin/login}" method="post">

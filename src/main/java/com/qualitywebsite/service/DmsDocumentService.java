@@ -55,6 +55,20 @@ public class DmsDocumentService {
 
     private static final Set<String> ALLOWED_MIME_TYPES = new HashSet<>(EXTENSION_TO_MIME.values());
 
+    public int[] parseVersion(String versionStr) {
+        if (versionStr == null || versionStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Document version number is required.");
+        }
+        String trimmed = versionStr.trim();
+        if (!trimmed.matches("^\\d+(\\.\\d+)?$")) {
+            throw new IllegalArgumentException("Please enter a valid document version number, such as 1.0 or 2.1.");
+        }
+        String[] parts = trimmed.split("\\.");
+        int major = Integer.parseInt(parts[0]);
+        int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+        return new int[]{major, minor};
+    }
+
     @Transactional
     public UploadResponseDTO uploadDocument(
             MultipartFile file,
@@ -66,10 +80,45 @@ public class DmsDocumentService {
             String remarks,
             String username,
             boolean confirmNewVersion) throws IOException {
+        return uploadDocument(file, category, processGroup, processId, processName, documentName, null, remarks, username, confirmNewVersion);
+    }
+
+    @Transactional
+    public UploadResponseDTO uploadDocument(
+            MultipartFile file,
+            String category,
+            String processGroup,
+            String processId,
+            String processName,
+            String documentName,
+            String customVersion,
+            String remarks,
+            String username,
+            boolean confirmNewVersion) throws IOException {
 
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File cannot be empty.");
+            throw new IllegalArgumentException("Please select a document to upload.");
         }
+
+        boolean catMissing = (category == null || category.trim().isEmpty());
+        boolean procMissing = (processId == null || processId.trim().isEmpty());
+        boolean docMissing = (documentName == null || documentName.trim().isEmpty());
+
+        int missingCount = (catMissing ? 1 : 0) + (procMissing ? 1 : 0) + (docMissing ? 1 : 0);
+        if (missingCount >= 2) {
+            throw new IllegalArgumentException("Please fill in all required fields.");
+        }
+        if (catMissing) {
+            throw new IllegalArgumentException("Please select a category.");
+        }
+        if (procMissing) {
+            throw new IllegalArgumentException("Process ID is required.");
+        }
+        if (docMissing) {
+            throw new IllegalArgumentException("Document name is required.");
+        }
+
+        parseVersion(customVersion);
 
         String originalName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         String fileExt = getFileExtension(originalName).toUpperCase(Locale.ROOT);
@@ -78,31 +127,33 @@ public class DmsDocumentService {
         byte[] fileBytes = file.getBytes();
         String checksum = calculateChecksum(fileBytes);
 
-        String cleanProcId = (processId != null && !processId.trim().isEmpty()) ? processId.trim() : "GLOBAL";
-        String cleanCat = (category != null && !category.trim().isEmpty()) ? category.trim() : "ASPICE PRM";
-        String cleanDocName = (documentName != null && !documentName.trim().isEmpty()) ? documentName.trim() : removeExtension(originalName);
+        // Global duplicate file content check (SHA-256 checksum)
+        if (documentVersionRepository.existsByChecksum(checksum)) {
+            Optional<DocumentVersion> existingChecksumOpt = documentVersionRepository.findFirstByChecksum(checksum);
+            DocumentMaster existingMaster = existingChecksumOpt.map(DocumentVersion::getDocumentMaster).orElse(null);
+            return UploadResponseDTO.builder()
+                    .success(false)
+                    .message("Duplicate file detected. This document already exists with the same file content.")
+                    .details("This document already exists with the same file content. Please choose a different file or upload a new version.")
+                    .documentMasterId(existingMaster != null ? existingMaster.getId() : null)
+                    .documentCode(existingMaster != null ? existingMaster.getDocumentCode() : null)
+                    .version(existingMaster != null ? existingMaster.getCurrentVersion() : null)
+                    .action("REJECTED")
+                    .isDuplicateChecksum(true)
+                    .existingDocument(existingMaster != null ? toDTO(existingMaster) : null)
+                    .build();
+        }
 
-        // Duplicate detection: check by processId + category + documentName
+        String cleanProcId = processId.trim();
+        String cleanCat = category.trim();
+        String cleanDocName = documentName.trim();
+
+        // Check if document master already exists by processId + category + documentName
         Optional<DocumentMaster> existingOpt = documentMasterRepository
                 .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(cleanProcId, cleanCat, cleanDocName);
 
         if (existingOpt.isPresent()) {
             DocumentMaster existing = existingOpt.get();
-            Optional<DocumentVersion> latestVersionOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(existing.getId());
-
-            if (latestVersionOpt.isPresent() && latestVersionOpt.get().getChecksum().equalsIgnoreCase(checksum)) {
-                return UploadResponseDTO.builder()
-                        .success(false)
-                        .message("Duplicate document already exists with identical file content.")
-                        .documentMasterId(existing.getId())
-                        .documentCode(existing.getDocumentCode())
-                        .version(existing.getCurrentVersion())
-                        .action("REJECTED")
-                        .isDuplicateChecksum(true)
-                        .existingDocument(toDTO(existing))
-                        .build();
-            }
-
             if (!confirmNewVersion) {
                 return UploadResponseDTO.builder()
                         .success(false)
@@ -116,10 +167,20 @@ public class DmsDocumentService {
                         .build();
             }
 
-            return uploadNewVersion(existing.getId(), fileBytes, originalName, fileExt, resolvedMimeType, remarks, username);
+            return uploadNewVersion(existing.getId(), fileBytes, originalName, fileExt, resolvedMimeType, customVersion, remarks, username);
         }
 
-        // New Document Creation - Initial status = UNDER_REVIEW (Task 2)
+        // New Document Creation
+        int major = 1;
+        int minor = 0;
+        String finalVersionStr = "1.0";
+        if (customVersion != null) {
+            int[] verParts = parseVersion(customVersion);
+            major = verParts[0];
+            minor = verParts[1];
+            finalVersionStr = major + "." + minor;
+        }
+
         String code = generateDocumentCode(cleanProcId, cleanCat, cleanDocName);
 
         DocumentMaster master = DocumentMaster.builder()
@@ -129,7 +190,7 @@ public class DmsDocumentService {
                 .processGroup(processGroup != null && !processGroup.trim().isEmpty() ? processGroup.trim() : "General")
                 .category(cleanCat)
                 .documentName(cleanDocName)
-                .currentVersion("1.0")
+                .currentVersion(finalVersionStr)
                 .status("UNDER_REVIEW")
                 .createdBy(username != null ? username : "admin")
                 .createdDate(LocalDateTime.now())
@@ -138,11 +199,11 @@ public class DmsDocumentService {
 
         master = documentMasterRepository.save(master);
 
-        // Store major_version=1, minor_version=0 (Task 1: Removed redundant persistent "version" column)
         DocumentVersion version = DocumentVersion.builder()
                 .documentMaster(master)
-                .majorVersion(1)
-                .minorVersion(0)
+                .version(finalVersionStr)
+                .majorVersion(major)
+                .minorVersion(minor)
                 .fileName(originalName)
                 .fileType(fileExt)
                 .mimeType(resolvedMimeType)
@@ -152,20 +213,20 @@ public class DmsDocumentService {
                 .uploadedBy(username != null ? username : "admin")
                 .uploadedDate(LocalDateTime.now())
                 .approvalStatus("UNDER_REVIEW")
-                .remarks(remarks != null ? remarks : "Initial document upload - pending review")
+                .remarks(remarks != null && !remarks.trim().isEmpty() ? remarks.trim() : "Initial document upload - pending review")
                 .isLatest(true)
                 .build();
 
         version = documentVersionRepository.save(version);
 
-        logActivity(master.getId(), version.getVersion(), "UPLOAD", username, "Uploaded document " + master.getDocumentName() + " (v1.0) - Pending Review");
+        logActivity(master.getId(), version.getVersion(), "UPLOAD", username, "Uploaded document " + master.getDocumentName() + " (v" + finalVersionStr + ") - Pending Review");
 
         return UploadResponseDTO.builder()
                 .success(true)
                 .message("Document uploaded successfully and is now UNDER_REVIEW.")
                 .documentMasterId(master.getId())
                 .documentCode(master.getDocumentCode())
-                .version("1.0")
+                .version(finalVersionStr)
                 .action("CREATED")
                 .isDuplicateChecksum(false)
                 .existingDocument(toDTO(master))
@@ -181,6 +242,19 @@ public class DmsDocumentService {
             String mimeType,
             String remarks,
             String username) {
+        return uploadNewVersion(masterId, fileBytes, originalName, fileExt, mimeType, null, remarks, username);
+    }
+
+    @Transactional
+    public UploadResponseDTO uploadNewVersion(
+            Long masterId,
+            byte[] fileBytes,
+            String originalName,
+            String fileExt,
+            String mimeType,
+            String customVersion,
+            String remarks,
+            String username) {
 
         try {
             validateFileContent(fileBytes, originalName, fileExt);
@@ -189,44 +263,62 @@ public class DmsDocumentService {
 
             String checksum = calculateChecksum(fileBytes);
 
-            // Check if identical checksum already exists in version history
-            Optional<DocumentVersion> sameChecksumOpt = documentVersionRepository.findByMasterIdAndChecksum(masterId, checksum);
-            if (sameChecksumOpt.isPresent()) {
+            // Check if identical checksum already exists
+            if (documentVersionRepository.existsByChecksum(checksum)) {
+                Optional<DocumentVersion> sameChecksumOpt = documentVersionRepository.findFirstByChecksum(checksum);
+                DocumentMaster existingMaster = sameChecksumOpt.map(DocumentVersion::getDocumentMaster).orElse(master);
                 return UploadResponseDTO.builder()
                         .success(false)
-                        .message("Duplicate file already exists in version history (v" + sameChecksumOpt.get().getVersion() + ").")
-                        .documentMasterId(master.getId())
-                        .documentCode(master.getDocumentCode())
-                        .version(master.getCurrentVersion())
+                        .message("Duplicate file detected. This document already exists with the same file content.")
+                        .details("This document already exists with the same file content. Please choose a different file or upload a new version.")
+                        .documentMasterId(existingMaster.getId())
+                        .documentCode(existingMaster.getDocumentCode())
+                        .version(existingMaster.getCurrentVersion())
                         .action("REJECTED")
                         .isDuplicateChecksum(true)
-                        .existingDocument(toDTO(master))
+                        .existingDocument(toDTO(existingMaster))
                         .build();
             }
 
-            // Set previous versions isLatest = false
             List<DocumentVersion> allVersions = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(masterId);
-            int latestMajor = 1;
-            int latestMinor = 0;
-            if (!allVersions.isEmpty()) {
-                DocumentVersion top = allVersions.get(0);
-                latestMajor = top.getMajorVersion() != null ? top.getMajorVersion() : 1;
-                latestMinor = top.getMinorVersion() != null ? top.getMinorVersion() : 0;
+            int targetMajor = 1;
+            int targetMinor = 0;
+
+            if (customVersion != null) {
+                int[] verParts = parseVersion(customVersion);
+                targetMajor = verParts[0];
+                targetMinor = verParts[1];
+            } else {
+                int latestMajor = 1;
+                int latestMinor = 0;
+                if (!allVersions.isEmpty()) {
+                    DocumentVersion top = allVersions.get(0);
+                    latestMajor = top.getMajorVersion() != null ? top.getMajorVersion() : 1;
+                    latestMinor = top.getMinorVersion() != null ? top.getMinorVersion() : 0;
+                }
+                targetMajor = latestMajor;
+                targetMinor = latestMinor + 1;
             }
 
+            String targetVersionStr = targetMajor + "." + targetMinor;
+
+            // DUPLICATE VERSION CHECK: Scoped to this master document
+            Optional<DocumentVersion> dupVerOpt = documentVersionRepository.findByMasterIdAndMajorMinor(masterId, targetMajor, targetMinor);
+            if (dupVerOpt.isPresent()) {
+                throw new IllegalArgumentException("Document version " + targetVersionStr + " already exists. Please enter a different version number.");
+            }
+
+            // Set previous versions isLatest = false
             for (DocumentVersion v : allVersions) {
                 v.setIsLatest(false);
             }
             documentVersionRepository.saveAll(allVersions);
 
-            // Increment minor version (e.g. 1.0 -> 1.1)
-            int newMinor = latestMinor + 1;
-            String newVersionStr = latestMajor + "." + newMinor;
-
             DocumentVersion newVersion = DocumentVersion.builder()
                     .documentMaster(master)
-                    .majorVersion(latestMajor)
-                    .minorVersion(newMinor)
+                    .version(targetVersionStr)
+                    .majorVersion(targetMajor)
+                    .minorVersion(targetMinor)
                     .fileName(originalName)
                     .fileType(fileExt)
                     .mimeType(mimeType)
@@ -236,27 +328,27 @@ public class DmsDocumentService {
                     .uploadedBy(username != null ? username : "admin")
                     .uploadedDate(LocalDateTime.now())
                     .approvalStatus("UNDER_REVIEW")
-                    .remarks(remarks != null && !remarks.trim().isEmpty() ? remarks.trim() : "Uploaded new version v" + newVersionStr)
+                    .remarks(remarks != null && !remarks.trim().isEmpty() ? remarks.trim() : "Uploaded new version v" + targetVersionStr)
                     .isLatest(true)
                     .build();
 
             newVersion = documentVersionRepository.save(newVersion);
 
-            master.setCurrentVersion(newVersionStr);
+            master.setCurrentVersion(targetVersionStr);
             master.setStatus("UNDER_REVIEW");
             master.setUpdatedDate(LocalDateTime.now());
             master = documentMasterRepository.save(master);
 
             // Only log on success — failed lock attempts must not create audit records
-            logActivity(master.getId(), newVersionStr, "UPDATE", username,
-                    "Uploaded new version v" + newVersionStr + " for " + master.getDocumentName() + " (UNDER_REVIEW)");
+            logActivity(master.getId(), targetVersionStr, "UPDATE", username,
+                    "Uploaded new version v" + targetVersionStr + " for " + master.getDocumentName() + " (UNDER_REVIEW)");
 
             return UploadResponseDTO.builder()
                     .success(true)
-                    .message("New version v" + newVersionStr + " uploaded successfully and submitted for review.")
+                    .message("New version v" + targetVersionStr + " uploaded successfully and submitted for review.")
                     .documentMasterId(master.getId())
                     .documentCode(master.getDocumentCode())
-                    .version(newVersionStr)
+                    .version(targetVersionStr)
                     .action("VERSIONED")
                     .isDuplicateChecksum(false)
                     .existingDocument(toDTO(master))
@@ -404,6 +496,9 @@ public class DmsDocumentService {
                 documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
                         .forEach(legacy -> {
                             legacy.setIsActive(true);
+                            if (master.getCurrentVersion() != null) {
+                                legacy.setVersion(master.getCurrentVersion());
+                            }
                             documentRepository.save(legacy);
                         });
             } catch (Exception ignored) {}
@@ -738,13 +833,13 @@ public class DmsDocumentService {
     // Task 3: MIME Type & Content Validation via Apache Tika Magic Bytes
     private String resolveAndValidateMimeType(MultipartFile file, String fileExt) {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Uploaded file cannot be empty.");
+            throw new IllegalArgumentException("Please select a document to upload.");
         }
         String expectedMime = EXTENSION_TO_MIME.get(fileExt);
 
         if (expectedMime == null) {
             log.warn("[DMS Validation] Rejected upload with unsupported extension: .{}", fileExt);
-            throw new IllegalArgumentException("Unsupported file format: ." + fileExt + ". Allowed formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX");
+            throw new IllegalArgumentException("Invalid file format. Please upload a supported document type.");
         }
 
         String detectedMime;
@@ -762,7 +857,7 @@ public class DmsDocumentService {
                     || (detectedMime.contains("ole-storage") && (fileExt.equals("DOC") || fileExt.equals("XLS") || fileExt.equals("PPT")));
             if (!valid) {
                 log.warn("[DMS Validation] Content mismatch for file {}: detected MIME {} vs expected extension .{}", file.getOriginalFilename(), detectedMime, fileExt);
-                throw new IllegalArgumentException("Invalid file content: detected format (" + detectedMime + ") does not match extension ." + fileExt);
+                throw new IllegalArgumentException("Invalid file format. Please upload a supported document type.");
             }
             return detectedMime;
         }
@@ -772,14 +867,14 @@ public class DmsDocumentService {
 
     public void validateFileContent(byte[] bytes, String originalName, String fileExt) {
         if (bytes == null || bytes.length == 0) {
-            throw new IllegalArgumentException("File content cannot be empty.");
+            throw new IllegalArgumentException("Please select a document to upload.");
         }
 
         String ext = (fileExt != null) ? fileExt.toUpperCase(Locale.ROOT) : getFileExtension(originalName).toUpperCase(Locale.ROOT);
         String expectedMime = EXTENSION_TO_MIME.get(ext);
         if (expectedMime == null) {
             log.warn("[DMS Validation] Rejected version file with unsupported extension: .{}", ext);
-            throw new IllegalArgumentException("Unsupported file format: ." + ext + ". Allowed formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX");
+            throw new IllegalArgumentException("Invalid file format. Please upload a supported document type.");
         }
 
         String detectedMime;
@@ -796,7 +891,7 @@ public class DmsDocumentService {
                     || (detectedMime.contains("ole-storage") && (ext.equals("DOC") || ext.equals("XLS") || ext.equals("PPT")));
             if (!valid) {
                 log.warn("[DMS Validation] Content mismatch for version file {}: detected MIME {} vs expected extension .{}", originalName, detectedMime, ext);
-                throw new IllegalArgumentException("Invalid file content: detected format (" + detectedMime + ") does not match extension ." + ext);
+                throw new IllegalArgumentException("Invalid file format. Please upload a supported document type.");
             }
         }
     }

@@ -10,6 +10,7 @@ public class UploadResponseDTO {
 
     private boolean success;
     private String message;
+    private String details;
     private Long documentMasterId;
     private String documentCode;
     private String version;

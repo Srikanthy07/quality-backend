@@ -78,7 +78,7 @@
                 <th>Process ID</th>
                 <th>Process Name</th>
                 <th>Template Name</th>
-                <th>Version</th>
+                <th>Doc version number</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -137,6 +137,7 @@
     </div>
   </div>
 
+  <script src="/admin/js/admin-notifications.js"></script>
   <script th:inline="javascript">
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
@@ -234,12 +235,12 @@
     function submitMlForm() {
       const id = document.getElementById('ml-id').value;
       const payload = {
-        sNo: parseInt(document.getElementById('ml-sno').value) || 1,
-        processId: document.getElementById('ml-proc-id').value,
-        processName: document.getElementById('ml-proc-name').value,
-        templateName: document.getElementById('ml-tpl-name').value,
-        version: document.getElementById('ml-version').value,
-        processGroup: document.getElementById('ml-group').value
+        processId: document.getElementById('processId').value,
+        processGroup: document.getElementById('processGroup').value,
+        documentName: document.getElementById('documentName').value,
+        version: document.getElementById('version').value,
+        status: document.getElementById('status').value,
+        remarks: document.getElementById('remarks').value
       };
 
       const method = id ? 'PUT' : 'POST';
@@ -255,10 +256,13 @@
       }).then(res => {
         if (res.ok) {
           closeModal('ml-modal');
+          adminNotify({ title: 'Master list item saved successfully', type: 'success' });
           loadData();
         } else {
-          alert('Failed to save Master List row.');
+          adminNotify({ title: 'Something went wrong', message: 'Please try again.', type: 'danger' });
         }
+      }).catch(() => {
+        adminNotify({ title: 'Something went wrong', message: 'Please try again.', type: 'danger' });
       });
     }
 
@@ -267,7 +271,16 @@
         fetch(`/api/admin/master-list/${id}`, {
           method: 'DELETE',
           headers: { [csrfHeader]: csrfToken }
-        }).then(res => { if (res.ok) loadData(); });
+        }).then(res => {
+          if (res.ok) {
+            adminNotify({ title: 'Master list item deleted', type: 'success' });
+            loadData();
+          } else {
+            adminNotify({ title: 'Something went wrong', message: 'Please try again.', type: 'danger' });
+          }
+        }).catch(() => {
+          adminNotify({ title: 'Something went wrong', message: 'Please try again.', type: 'danger' });
+        });
       }
     }
 

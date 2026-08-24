@@ -207,6 +207,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceeded(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        log.warn("[GlobalExceptionHandler] Max Upload Size Exceeded (413): {}", ex.getMessage());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", 413);
+        body.put("error", "Payload Too Large");
+        body.put("success", false);
+        body.put("message", "The selected file exceeds the maximum allowed file size.");
+        body.put("details", "File size exceeds the maximum allowed limit of 50 MB.");
+        body.put("timestamp", Instant.now().toString());
+
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex, HttpServletRequest request) {
         if (isClientAbortException(ex)) {
@@ -222,7 +237,7 @@ public class GlobalExceptionHandler {
         response.put("status", 500);
         response.put("error", "Internal Server Error");
         response.put("success", false);
-        response.put("message", "An unexpected error occurred. Please try again.");
+        response.put("message", "Unable to upload the document. Please try again.");
         response.put("timestamp", Instant.now().toString());
 
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

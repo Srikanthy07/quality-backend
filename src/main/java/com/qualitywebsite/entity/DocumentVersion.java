@@ -37,6 +37,9 @@ public class DocumentVersion {
     @JsonIgnore
     private DocumentMaster documentMaster;
 
+    @Column(name = "version", nullable = false)
+    private String version;
+
     @Column(name = "major_version", nullable = false)
     private Integer majorVersion;
 
@@ -85,15 +88,23 @@ public class DocumentVersion {
     @Builder.Default
     private Boolean isLatest = true;
 
-    // Dynamically generated display version (Task 1: Removed redundant persistent "version" column)
     public String getVersion() {
+        if (this.version != null && !this.version.trim().isEmpty()) {
+            return this.version;
+        }
         int maj = (majorVersion != null) ? majorVersion : 1;
         int min = (minorVersion != null) ? minorVersion : 0;
         return maj + "." + min;
     }
 
     @PrePersist
+    @PreUpdate
     public void onCreate() {
+        if (this.version == null || this.version.trim().isEmpty()) {
+            int maj = (majorVersion != null) ? majorVersion : 1;
+            int min = (minorVersion != null) ? minorVersion : 0;
+            this.version = maj + "." + min;
+        }
         if (this.uploadedDate == null) {
             this.uploadedDate = LocalDateTime.now();
         }

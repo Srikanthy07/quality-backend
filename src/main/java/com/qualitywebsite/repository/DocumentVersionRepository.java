@@ -28,10 +28,15 @@ public interface DocumentVersionRepository extends JpaRepository<DocumentVersion
 
     long countByDocumentMasterId(Long documentMasterId);
 
-    Optional<DocumentVersion> findByChecksum(String checksum);
+    boolean existsByChecksum(String checksum);
+
+    Optional<DocumentVersion> findFirstByChecksum(String checksum);
+
+    List<DocumentVersion> findByChecksum(String checksum);
 
     Optional<DocumentVersion> findFirstByFileNameIgnoreCase(String fileName);
 
-    @Query("SELECT v FROM DocumentVersion v WHERE v.documentMaster.id = :masterId AND v.checksum = :checksum")
-    Optional<DocumentVersion> findByMasterIdAndChecksum(@Param("masterId") Long masterId, @Param("checksum") String checksum);
+    boolean existsByDocumentMasterIdAndChecksum(Long masterId, String checksum);
+
+    Optional<DocumentVersion> findFirstByDocumentMasterIdAndChecksum(Long masterId, String checksum);
 }

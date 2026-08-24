@@ -32,6 +32,7 @@ public class DocumentService {
     public List<DocumentEntity> getAllDocuments() {
         return documentRepository.findAllByIsActiveTrue().stream()
                 .filter(this::isMasterApproved)
+                .map(this::syncVersionFromMaster)
                 .toList();
     }
 
@@ -39,17 +40,40 @@ public class DocumentService {
     public List<DocumentEntity> searchAndFilter(String query, String category) {
         return documentRepository.searchAndFilter(query, category).stream()
                 .filter(this::isMasterApproved)
+                .map(this::syncVersionFromMaster)
                 .toList();
     }
 
     public Optional<DocumentEntity> getById(String id) {
-        return documentRepository.findById(id).filter(this::isMasterApproved);
+        return documentRepository.findById(id)
+                .filter(this::isMasterApproved)
+                .map(this::syncVersionFromMaster);
     }
 
     public List<DocumentEntity> getByCategory(String category) {
         return documentRepository.findByCategoryIgnoreCaseAndIsActiveTrue(category).stream()
                 .filter(this::isMasterApproved)
+                .map(this::syncVersionFromMaster)
                 .toList();
+    }
+
+    public DocumentEntity syncVersionFromMaster(DocumentEntity doc) {
+        if (doc == null) return null;
+        Optional<DocumentMaster> masterOpt = documentMasterRepository
+                .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+                        doc.getProcess(), doc.getCategory(), doc.getDocumentName());
+        if (masterOpt.isEmpty()) {
+            masterOpt = documentMasterRepository.findAll().stream()
+                    .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
+                    .findFirst();
+        }
+        if (masterOpt.isPresent()) {
+            DocumentMaster master = masterOpt.get();
+            if (master.getCurrentVersion() != null && !master.getCurrentVersion().isBlank()) {
+                doc.setVersion(master.getCurrentVersion());
+            }
+        }
+        return doc;
     }
 
     public boolean isMasterApproved(DocumentEntity doc) {
