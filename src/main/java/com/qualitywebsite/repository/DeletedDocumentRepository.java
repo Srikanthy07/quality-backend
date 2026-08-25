@@ -12,6 +12,10 @@ public interface DeletedDocumentRepository extends JpaRepository<DeletedDocument
 
     Optional<DeletedDocument> findByOriginalMasterId(Long originalMasterId);
 
+    Optional<DeletedDocument> findByDocumentNameIgnoreCase(String documentName);
+
+    Optional<DeletedDocument> findByDocumentCode(String documentCode);
+
     List<DeletedDocument> findAllByOrderByDeletedDateDesc();
 
     List<DeletedDocument> findByCategoryIgnoreCaseOrderByDeletedDateDesc(String category);

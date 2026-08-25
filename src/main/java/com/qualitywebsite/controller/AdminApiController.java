@@ -246,7 +246,8 @@ public class AdminApiController {
 
     @DeleteMapping("/dms/documents/{id}")
     public ResponseEntity<?> deleteDmsDocument(@PathVariable Long id, Authentication auth) {
-        boolean ok = dmsDocumentService.archiveDocument(id, getUsername(auth));
+        log.info("[Delete Request Diagnostic] DELETE /api/admin/dms/documents/{} received for user '{}'", id, getUsername(auth));
+        boolean ok = dmsDocumentService.deletePermanently(id, getUsername(auth));
         if (ok) {
             return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
         }
@@ -358,15 +359,16 @@ public class AdminApiController {
 
     @DeleteMapping("/documents/{id}")
     public ResponseEntity<?> deleteDocument(@PathVariable String id, Authentication auth) {
+        log.info("[Delete Request Diagnostic] DELETE /api/admin/documents/{} received for user '{}'", id, getUsername(auth));
         try {
             Long masterId = Long.parseLong(id);
-            boolean ok = dmsDocumentService.archiveDocument(masterId, getUsername(auth));
+            boolean ok = dmsDocumentService.deletePermanently(masterId, getUsername(auth));
             if (ok) return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
             return ResponseEntity.notFound().build();
         } catch (NumberFormatException e) {
             Optional<DocumentMaster> masterOpt = documentMasterRepository.findByDocumentCode(id);
             if (masterOpt.isPresent()) {
-                boolean ok = dmsDocumentService.archiveDocument(masterOpt.get().getId(), getUsername(auth));
+                boolean ok = dmsDocumentService.deletePermanently(masterOpt.get().getId(), getUsername(auth));
                 if (ok) return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
             }
             boolean deleted = legacyDocumentService.deleteDocument(id, getUsername(auth));

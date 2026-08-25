@@ -29,7 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:upload_error_testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
     "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "server.ssl.enabled=false"
 })
 class AdminDocumentUploadErrorHandlingTest {
 
@@ -57,6 +58,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(file)
+                .secure(true)
                 .param("category", "ASPICE PRM")
                 .param("processGroup", "Software Engineering")
                 .param("processId", "SWE.1")
@@ -81,6 +83,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(docxFile)
+                .secure(true)
                 .param("category", "ASPICE PRM")
                 .param("processGroup", "System Engineering")
                 .param("processId", "SYS.3")
@@ -116,6 +119,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(file)
+                .secure(true)
                 .param("category", "ASPICE PRM")
                 .param("processId", "SWE.1")
                 .param("documentName", "   ")
@@ -135,6 +139,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(file)
+                .secure(true)
                 .param("category", "ASPICE PRM")
                 .param("processId", "")
                 .param("documentName", "SWE.1 Software Requirements Spec")
@@ -154,6 +159,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(file)
+                .secure(true)
                 .param("category", "")
                 .param("processId", "SWE.1")
                 .param("documentName", "SWE.1 Software Requirements Spec")
@@ -173,6 +179,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(file)
+                .secure(true)
                 .param("category", "")
                 .param("processId", "")
                 .param("documentName", "")
@@ -191,6 +198,7 @@ class AdminDocumentUploadErrorHandlingTest {
 
         mockMvc.perform(multipart("/api/admin/dms/upload")
                 .file(emptyFile)
+                .secure(true)
                 .param("category", "ASPICE PRM")
                 .param("processId", "SWE.1")
                 .param("documentName", "SWE.1 Software Requirements Spec")

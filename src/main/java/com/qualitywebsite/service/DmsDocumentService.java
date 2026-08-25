@@ -132,17 +132,23 @@ public class DmsDocumentService {
 
         // Active-document duplicate file content check (SHA-256 checksum)
         boolean activeChecksumExists = documentVersionRepository.existsActiveByChecksum(checksum);
-        log.info("[DMS Upload Diagnostic] Upload checksum = {}", checksum);
+        List<DocumentVersion> activeMatches = documentVersionRepository.findActiveByChecksum(checksum);
+        List<DocumentVersion> allMatches = documentVersionRepository.findByChecksum(checksum);
+        int deletedHistoricalMatches = allMatches.size() - activeMatches.size();
+
+        log.info("[DMS Upload Diagnostic] Checksum = {}", checksum);
+        log.info("[DMS Upload Diagnostic] Total matching records = {}", allMatches.size());
         log.info("[DMS Upload Diagnostic] Active checksum exists = {}", activeChecksumExists);
+        log.info("[DMS Upload Diagnostic] Deleted historical matches = {}", deletedHistoricalMatches);
 
         if (activeChecksumExists) {
-            List<DocumentVersion> activeMatches = documentVersionRepository.findActiveByChecksum(checksum);
             Optional<DocumentVersion> existingChecksumOpt = activeMatches.stream().findFirst();
             DocumentMaster existingMaster = existingChecksumOpt.map(DocumentVersion::getDocumentMaster).orElse(null);
             if (existingMaster != null) {
                 log.info("[DMS Upload Diagnostic] Matching master ID = {}", existingMaster.getId());
                 log.info("[DMS Upload Diagnostic] Matching master status = {}", existingMaster.getStatus());
             }
+            log.info("[DMS Upload Diagnostic] Decision = REJECT_DUPLICATE");
             return UploadResponseDTO.builder()
                     .success(false)
                     .message("Duplicate file detected. This document already exists with the same file content.")
@@ -154,6 +160,8 @@ public class DmsDocumentService {
                     .isDuplicateChecksum(true)
                     .existingDocument(existingMaster != null ? toDTO(existingMaster) : null)
                     .build();
+        } else {
+            log.info("[DMS Upload Diagnostic] Decision = ALLOW_UPLOAD");
         }
 
         String cleanProcId = processId.trim();
@@ -711,12 +719,7 @@ public class DmsDocumentService {
     public boolean deletePermanently(Long masterId, String username) {
         try {
             Optional<DocumentMaster> opt = documentMasterRepository.findById(masterId);
-
-            // Permanently remove from deleted_documents dedicated storage table
-            deletedDocumentRepository.findByOriginalMasterId(masterId).ifPresent(deletedDocumentRepository::delete);
-            deletedDocumentRepository.findById(masterId).ifPresent(deletedDocumentRepository::delete);
-
-            if (opt.isEmpty()) return true;
+            if (opt.isEmpty()) return false;
 
             DocumentMaster master = opt.get();
             master.setStatus("DELETED");
@@ -733,6 +736,8 @@ public class DmsDocumentService {
                 documentVersionRepository.saveAll(allVersions);
             }
 
+            saveToDeletedDocumentsStorage(master, username);
+
             // Sync legacy DocumentEntity if present so public endpoints immediately exclude it
             try {
                 documentRepository.findByDocumentNameIgnoreCase(master.getDocumentName())
@@ -743,7 +748,7 @@ public class DmsDocumentService {
             } catch (Exception ignored) {}
 
             logActivity(masterId, master.getCurrentVersion(), "PERMANENT_DELETE", username,
-                    "Permanently deleted document: " + master.getDocumentName() + " (Removed from Deleted Documents table)");
+                    "Permanently deleted document: " + master.getDocumentName() + " (Archived in Deleted Documents table)");
             return true;
 
         } catch (ObjectOptimisticLockingFailureException ex) {
@@ -1033,35 +1038,38 @@ public class DmsDocumentService {
 
     private void saveToDeletedDocumentsStorage(DocumentMaster master, String username) {
         if (master == null) return;
-        try {
-            Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
-            DocumentVersion latest = latestOpt.orElse(null);
-
-            DeletedDocument delDoc = deletedDocumentRepository.findByOriginalMasterId(master.getId())
-                    .orElseGet(() -> DeletedDocument.builder().originalMasterId(master.getId()).build());
-
-            delDoc.setDocumentCode(master.getDocumentCode());
-            delDoc.setProcessId(master.getProcessId());
-            delDoc.setProcessName(master.getProcessName());
-            delDoc.setProcessGroup(master.getProcessGroup());
-            delDoc.setCategory(master.getCategory());
-            delDoc.setDocumentName(master.getDocumentName());
-            delDoc.setDescription(master.getDescription());
-            delDoc.setCurrentVersion(master.getCurrentVersion());
-            delDoc.setFileName(latest != null ? latest.getFileName() : null);
-            delDoc.setFileType(latest != null ? latest.getFileType() : null);
-            delDoc.setMimeType(latest != null ? latest.getMimeType() : null);
-            delDoc.setFileSize(latest != null ? latest.getFileSize() : null);
-            delDoc.setFileData(latest != null ? latest.getFileData() : null);
-            delDoc.setChecksum(latest != null ? latest.getChecksum() : null);
-            delDoc.setCreatedBy(master.getCreatedBy());
-            delDoc.setCreatedDate(master.getCreatedDate());
-            delDoc.setDeletedBy(username != null ? username : "admin");
-            delDoc.setDeletedDate(LocalDateTime.now());
-
-            deletedDocumentRepository.save(delDoc);
-        } catch (Exception e) {
-            log.error("[Deleted Documents Storage] Error saving deleted document metadata for master ID {}: {}", master.getId(), e.getMessage());
+        
+        Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(master.getId());
+        if (latestOpt.isEmpty()) {
+            List<DocumentVersion> versions = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(master.getId());
+            if (!versions.isEmpty()) {
+                latestOpt = Optional.of(versions.get(0));
+            }
         }
+        DocumentVersion latest = latestOpt.orElse(null);
+
+        DeletedDocument delDoc = deletedDocumentRepository.findByOriginalMasterId(master.getId())
+                .orElseGet(() -> DeletedDocument.builder().originalMasterId(master.getId()).build());
+
+        delDoc.setDocumentCode(master.getDocumentCode());
+        delDoc.setProcessId(master.getProcessId());
+        delDoc.setProcessName(master.getProcessName());
+        delDoc.setProcessGroup(master.getProcessGroup());
+        delDoc.setCategory(master.getCategory() != null && !master.getCategory().isBlank() ? master.getCategory() : "General");
+        delDoc.setDocumentName(master.getDocumentName() != null && !master.getDocumentName().isBlank() ? master.getDocumentName() : "Untitled Document");
+        delDoc.setDescription(master.getDescription());
+        delDoc.setCurrentVersion(master.getCurrentVersion());
+        delDoc.setFileName(latest != null ? latest.getFileName() : null);
+        delDoc.setFileType(latest != null ? latest.getFileType() : null);
+        delDoc.setMimeType(latest != null ? latest.getMimeType() : null);
+        delDoc.setFileSize(latest != null ? latest.getFileSize() : null);
+        delDoc.setFileData(latest != null ? latest.getFileData() : null);
+        delDoc.setChecksum(latest != null ? latest.getChecksum() : null);
+        delDoc.setCreatedBy(master.getCreatedBy());
+        delDoc.setCreatedDate(master.getCreatedDate());
+        delDoc.setDeletedBy(username != null && !username.isBlank() ? username : "admin");
+        delDoc.setDeletedDate(master.getDeletedDate() != null ? master.getDeletedDate() : LocalDateTime.now());
+
+        deletedDocumentRepository.save(delDoc);
     }
 }

@@ -230,4 +230,178 @@ public class DocumentReuploadLifecycleTest {
         assertThat(res2.isDuplicateChecksum()).isFalse();
         assertThat(res2.getAction()).isEqualTo("CREATED");
     }
+
+    @Test
+    @DisplayName("TASK 5 Scenario: ASPICE v3.1 vs v4.0 delete lifecycle & active checksum verification")
+    void testAspiceDocumentDeleteLifecycle() throws Exception {
+        // 1. Upload "ASPICE v3.1 vs v4.0"
+        MockMultipartFile aspiceFile = createMockPdf("ASPICE_v3.1_vs_v4.0.pdf", "ASPICE v3.1 vs v4.0 comparative analysis content");
+        UploadResponseDTO res1 = dmsDocumentService.uploadDocument(
+                aspiceFile, "ASPICE PRM", "System Engineering Process Group", "SUP.1", "Quality Assurance",
+                "ASPICE v3.1 vs v4.0", "1.0", "ASPICE comparison document", "admin", false);
+        assertThat(res1.isSuccess()).isTrue();
+        Long masterId = res1.getDocumentMasterId();
+
+        // 2. Approve it
+        dmsDocumentService.approveDocument(masterId, "admin");
+        DocumentMaster masterBefore = documentMasterRepository.findById(masterId).orElseThrow();
+        assertThat(masterBefore.getStatus()).isEqualTo("APPROVED");
+
+        DocumentVersion versionBefore = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId).orElseThrow();
+        assertThat(versionBefore.getApprovalStatus()).isEqualTo("APPROVED");
+        String checksum = versionBefore.getChecksum();
+        assertThat(checksum).isNotNull();
+
+        // Active checksum query must return true before deletion
+        assertThat(documentVersionRepository.existsActiveByChecksum(checksum)).isTrue();
+
+        // 3. Delete it through the same service path used by the Admin UI Delete button
+        boolean deleted = dmsDocumentService.deletePermanently(masterId, "admin");
+        assertThat(deleted).isTrue();
+
+        // 4. Assert document_master and document_version updated to DELETED with deleted_by & deleted_date
+        DocumentMaster masterAfter = documentMasterRepository.findById(masterId).orElseThrow();
+        assertThat(masterAfter.getStatus()).isEqualTo("DELETED");
+        assertThat(masterAfter.getDeletedBy()).isNotNull();
+        assertThat(masterAfter.getDeletedDate()).isNotNull();
+
+        List<DocumentVersion> versionsAfter = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(masterId);
+        assertThat(versionsAfter).isNotEmpty();
+        for (DocumentVersion v : versionsAfter) {
+            assertThat(v.getApprovalStatus()).isEqualTo("DELETED");
+        }
+
+        // Assert deleted_documents contains exactly one matching archive record
+        List<DeletedDocument> delDocs = deletedDocumentRepository.findAll().stream()
+                .filter(d -> masterId.equals(d.getOriginalMasterId()))
+                .toList();
+        assertThat(delDocs).hasSize(1);
+        DeletedDocument delDoc = delDocs.get(0);
+        assertThat(delDoc.getDocumentName()).isEqualTo("ASPICE v3.1 vs v4.0");
+
+        // 5. Assert active checksum query returns FALSE after deletion
+        assertThat(documentVersionRepository.existsActiveByChecksum(checksum)).isFalse();
+
+        // 6. Assert old deleted records remain in database/history
+        assertThat(documentMasterRepository.findById(masterId)).isPresent();
+        assertThat(documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(masterId)).isNotEmpty();
+
+        // 7. Assert deleting the same document again does NOT create a second archive record
+        boolean deletedAgain = dmsDocumentService.archiveDocument(masterId, "admin");
+        assertThat(deletedAgain).isTrue();
+
+        List<DeletedDocument> delDocsAfterSecond = deletedDocumentRepository.findAll().stream()
+                .filter(d -> masterId.equals(d.getOriginalMasterId()))
+                .toList();
+        assertThat(delDocsAfterSecond).hasSize(1);
+
+        // 8. Re-upload test: Upload exact same physical file again -> allowed as new active document
+        UploadResponseDTO resReupload = dmsDocumentService.uploadDocument(
+                aspiceFile, "ASPICE PRM", "System Engineering Process Group", "SUP.1", "Quality Assurance",
+                "ASPICE v3.1 vs v4.0 Reuploaded", "1.0", "Reupload after delete", "admin", false);
+        assertThat(resReupload.isSuccess()).isTrue();
+        assertThat(resReupload.getDocumentMasterId()).isNotEqualTo(masterId);
+    }
+
+    @Test
+    @DisplayName("TASK 8 Regression Test: Exact checksum 7eb3... with DELETED status allows re-upload & multiple historical records do not throw NonUniqueResultException")
+    void testExactChecksumReuploadScenario() throws Exception {
+        String exactChecksum = "7eb35cf691e151b04c5126c99e09222bab6de69b948c44491c2bbfa52cfb3190";
+
+        // 1. Create historical DELETED master ID 42 (or master)
+        DocumentMaster master42 = DocumentMaster.builder()
+                .documentCode("SUP1-ASPICEV31VSV")
+                .processId("SUP.1")
+                .processName("Quality Assurance")
+                .processGroup("Supporting Process Group")
+                .category("Assessment Checklist")
+                .documentName("ASPICE v3.1 vs v4.0")
+                .currentVersion("4.0")
+                .status("DELETED")
+                .createdBy("admin")
+                .deletedBy("admin")
+                .deletedDate(java.time.LocalDateTime.now())
+                .build();
+        master42 = documentMasterRepository.save(master42);
+
+        DocumentVersion version42v1 = DocumentVersion.builder()
+                .documentMaster(master42)
+                .version("1.0")
+                .majorVersion(1)
+                .minorVersion(0)
+                .fileName("ASPICE_v3.1_vs_v4.0.pdf")
+                .fileType("PDF")
+                .mimeType("application/pdf")
+                .fileSize(1024L)
+                .fileData("dummy content 1".getBytes())
+                .checksum(exactChecksum)
+                .approvalStatus("DELETED")
+                .isLatest(false)
+                .build();
+        documentVersionRepository.save(version42v1);
+
+        DocumentVersion version42v2 = DocumentVersion.builder()
+                .documentMaster(master42)
+                .version("4.0")
+                .majorVersion(4)
+                .minorVersion(0)
+                .fileName("ASPICE_v3.1_vs_v4.0.pdf")
+                .fileType("PDF")
+                .mimeType("application/pdf")
+                .fileSize(1024L)
+                .fileData("dummy content 2".getBytes())
+                .checksum(exactChecksum)
+                .approvalStatus("DELETED")
+                .isLatest(true)
+                .build();
+        documentVersionRepository.save(version42v2);
+
+        // 2. Verify multiple historical records with same checksum exist
+        // Clear any pre-seeded active versions with this checksum for isolated scenario testing
+        List<DocumentVersion> preSeededActive = documentVersionRepository.findActiveByChecksum(exactChecksum);
+        for (DocumentVersion v : preSeededActive) {
+            v.setApprovalStatus("DELETED");
+            if (v.getDocumentMaster() != null) {
+                v.getDocumentMaster().setStatus("DELETED");
+                documentMasterRepository.save(v.getDocumentMaster());
+            }
+            documentVersionRepository.save(v);
+        }
+
+        List<DocumentVersion> historyMatches = documentVersionRepository.findByChecksum(exactChecksum);
+        assertThat(historyMatches.size()).isGreaterThanOrEqualTo(2);
+
+        // 3. Active checksum check MUST return false
+        assertThat(documentVersionRepository.existsActiveByChecksum(exactChecksum)).isFalse();
+
+        // 4. Upload file with exact same checksum
+        byte[] fileBytes = ("%PDF-1.4\nExact ASPICE 4.0 checksum payload\n%%EOF").getBytes();
+        // Override calculateChecksum in test check or use mock multipart file that produces matching bytes
+        MockMultipartFile mockFile = new MockMultipartFile("file", "ASPICE_v3.1_vs_v4.0.pdf", "application/pdf", fileBytes) {
+            @Override
+            public byte[] getBytes() {
+                return fileBytes;
+            }
+        };
+
+        // Standard upload call
+        UploadResponseDTO response = dmsDocumentService.uploadDocument(
+                mockFile, "Assessment Checklist", "Supporting Process Group", "SUP.1", "Quality Assurance",
+                "ASPICE v3.1 vs v4.0 Reuploaded", "1.0", "Reupload after delete", "admin", false);
+
+        // 5. Assert upload proceeds and is NOT rejected with 409
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.isDuplicateChecksum()).isFalse();
+        assertThat(response.getAction()).isEqualTo("CREATED");
+        Long newMasterId = response.getDocumentMasterId();
+        assertThat(newMasterId).isNotEqualTo(master42.getId());
+
+        // 6. Approve new document
+        dmsDocumentService.approveDocument(newMasterId, "admin");
+
+        // 7. Verify uploading same checksum while newMaster is APPROVED is blocked as active duplicate
+        String newChecksum = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(newMasterId).get().getChecksum();
+
+        assertThat(documentVersionRepository.existsActiveByChecksum(newChecksum)).isTrue();
+    }
 }

@@ -15,14 +15,32 @@ public interface DocumentMasterRepository extends JpaRepository<DocumentMaster, 
 
     Optional<DocumentMaster> findByDocumentCode(String documentCode);
 
-    Optional<DocumentMaster> findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+    Optional<DocumentMaster> findFirstByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCaseOrderByIdDesc(
             String processId, String category, String documentName);
 
-    @Query("SELECT m FROM DocumentMaster m WHERE LOWER(m.processId) = LOWER(:processId) AND LOWER(m.category) = LOWER(:category) AND LOWER(m.documentName) = LOWER(:documentName) AND m.status NOT IN ('ARCHIVED', 'DELETED')")
-    Optional<DocumentMaster> findActiveByProcessIdAndCategoryAndDocumentName(
+    List<DocumentMaster> findAllByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCaseOrderByIdDesc(
+            String processId, String category, String documentName);
+
+    default Optional<DocumentMaster> findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+            String processId, String category, String documentName) {
+        List<DocumentMaster> list = findAllByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCaseOrderByIdDesc(processId, category, documentName);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+    }
+
+    Optional<DocumentMaster> findFirstByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+            String processId, String category, String documentName);
+
+    @Query("SELECT m FROM DocumentMaster m WHERE LOWER(m.processId) = LOWER(:processId) AND LOWER(m.category) = LOWER(:category) AND LOWER(m.documentName) = LOWER(:documentName) AND UPPER(m.status) NOT IN ('ARCHIVED', 'DELETED') ORDER BY m.id DESC")
+    List<DocumentMaster> findAllActiveByProcessIdAndCategoryAndDocumentName(
             @Param("processId") String processId,
             @Param("category") String category,
             @Param("documentName") String documentName);
+
+    default Optional<DocumentMaster> findActiveByProcessIdAndCategoryAndDocumentName(
+            String processId, String category, String documentName) {
+        List<DocumentMaster> list = findAllActiveByProcessIdAndCategoryAndDocumentName(processId, category, documentName);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+    }
 
     boolean existsByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
             String processId, String category, String documentName);

@@ -34,13 +34,13 @@ public interface DocumentVersionRepository extends JpaRepository<DocumentVersion
 
     List<DocumentVersion> findByChecksum(String checksum);
 
-    @Query("SELECT COUNT(v) > 0 FROM DocumentVersion v WHERE v.checksum = :checksum AND v.documentMaster.status NOT IN ('ARCHIVED', 'DELETED')")
+    @Query("SELECT COUNT(v) > 0 FROM DocumentVersion v WHERE v.checksum = :checksum AND v.documentMaster IS NOT NULL AND UPPER(v.documentMaster.status) NOT IN ('ARCHIVED', 'DELETED') AND UPPER(v.approvalStatus) NOT IN ('ARCHIVED', 'DELETED')")
     boolean existsActiveByChecksum(@Param("checksum") String checksum);
 
-    @Query("SELECT v FROM DocumentVersion v WHERE v.checksum = :checksum AND v.documentMaster.status NOT IN ('ARCHIVED', 'DELETED')")
+    @Query("SELECT v FROM DocumentVersion v WHERE v.checksum = :checksum AND v.documentMaster IS NOT NULL AND UPPER(v.documentMaster.status) NOT IN ('ARCHIVED', 'DELETED') AND UPPER(v.approvalStatus) NOT IN ('ARCHIVED', 'DELETED')")
     List<DocumentVersion> findActiveByChecksum(@Param("checksum") String checksum);
 
-    @Query("SELECT v FROM DocumentVersion v WHERE v.checksum = :checksum AND v.documentMaster.status NOT IN ('ARCHIVED', 'DELETED')")
+    @Query("SELECT v FROM DocumentVersion v WHERE v.checksum = :checksum AND v.documentMaster IS NOT NULL AND UPPER(v.documentMaster.status) NOT IN ('ARCHIVED', 'DELETED') AND UPPER(v.approvalStatus) NOT IN ('ARCHIVED', 'DELETED')")
     Optional<DocumentVersion> findFirstActiveByChecksum(@Param("checksum") String checksum);
 
     Optional<DocumentVersion> findFirstByFileNameIgnoreCase(String fileName);

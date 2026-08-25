@@ -1,8 +1,10 @@
 package com.qualitywebsite.controller;
 
+import com.qualitywebsite.entity.DeletedDocument;
 import com.qualitywebsite.entity.DocumentEntity;
 import com.qualitywebsite.entity.DocumentMaster;
 import com.qualitywebsite.entity.DocumentVersion;
+import com.qualitywebsite.repository.DeletedDocumentRepository;
 import com.qualitywebsite.repository.DocumentMasterRepository;
 import com.qualitywebsite.repository.DocumentRepository;
 import com.qualitywebsite.repository.DocumentVersionRepository;
@@ -19,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:archive_visibility_testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
     "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "server.ssl.enabled=false"
 })
 class AdminDmsArchiveAndPublicVisibilityTest {
 
@@ -43,6 +47,9 @@ class AdminDmsArchiveAndPublicVisibilityTest {
 
     @Autowired
     private DocumentVersionRepository documentVersionRepository;
+
+    @Autowired
+    private DeletedDocumentRepository deletedDocumentRepository;
 
     @Autowired
     private DocumentRepository documentRepository;
@@ -292,6 +299,32 @@ class AdminDmsArchiveAndPublicVisibilityTest {
                 .andExpect(jsonPath("$[*].documentName", hasItem("Active Test Document")));
     }
 
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @DisplayName("Regression Test: DELETE /api/admin/documents/{id} sets master & version status to DELETED with deleted_by & deleted_date and creates deleted_documents archive")
+    void testDeleteEndpointWorkflow() throws Exception {
+        Long id = activeMaster.getId();
+
+        mockMvc.perform(delete("/api/admin/documents/" + id)
+                        .with(csrf())
+                        .secure(true))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Document deleted successfully"));
+
+        DocumentMaster reloaded = documentMasterRepository.findById(id).orElseThrow();
+        assertEquals("DELETED", reloaded.getStatus());
+        assertNotNull(reloaded.getDeletedBy());
+        assertNotNull(reloaded.getDeletedDate());
+
+        List<DocumentVersion> versions = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(id);
+        assertFalse(versions.isEmpty());
+        assertEquals("DELETED", versions.get(0).getApprovalStatus());
+
+        Optional<DeletedDocument> delOpt = deletedDocumentRepository.findByOriginalMasterId(id);
+        assertTrue(delOpt.isPresent());
+        assertEquals("Active Test Document", delOpt.get().getDocumentName());
+    }
+
     // 5-13. Direct Restore ARCHIVED -> APPROVED Test
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
@@ -330,11 +363,11 @@ class AdminDmsArchiveAndPublicVisibilityTest {
                 .andExpect(jsonPath("$[*].documentName", not(hasItem("Archived Test Document"))));
 
         // Restored document is immediately visible publicly & downloadable
-        mockMvc.perform(get("/api/public/documents"))
+        mockMvc.perform(get("/api/public/documents").secure(true))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].documentName", hasItem("Archived Test Document")));
 
-        mockMvc.perform(get("/api/public/dms/download/" + restoredVersion.getId()))
+        mockMvc.perform(get("/api/public/dms/download/" + restoredVersion.getId()).secure(true))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "application/pdf"));
     }
@@ -378,15 +411,15 @@ class AdminDmsArchiveAndPublicVisibilityTest {
                 .andExpect(jsonPath("$[*].deletedBy", hasItem("admin")));
 
         // Excluded from public listings, public search, and public downloads
-        mockMvc.perform(get("/api/public/documents"))
+        mockMvc.perform(get("/api/public/documents").secure(true))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].documentName", not(hasItem("Archived Test Document"))));
 
-        mockMvc.perform(get("/api/public/search?query=Archived"))
+        mockMvc.perform(get("/api/public/search?query=Archived").secure(true))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].documentName", not(hasItem("Archived Test Document"))));
 
-        mockMvc.perform(get("/api/public/dms/download/" + archivedVersion.getId()))
+        mockMvc.perform(get("/api/public/dms/download/" + archivedVersion.getId()).secure(true))
                 .andExpect(status().isNotFound());
     }
 
@@ -445,7 +478,7 @@ class AdminDmsArchiveAndPublicVisibilityTest {
         documentRepository.save(reviewLegacy);
 
         // UNDER_REVIEW document is NOT visible publicly
-        mockMvc.perform(get("/api/public/documents"))
+        mockMvc.perform(get("/api/public/documents").secure(true))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].documentName", not(hasItem("Under Review Document"))));
 

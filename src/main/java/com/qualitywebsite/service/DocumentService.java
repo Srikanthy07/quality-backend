@@ -5,6 +5,7 @@ import com.qualitywebsite.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -200,6 +201,7 @@ public class DocumentService {
         return saved;
     }
 
+    @Transactional
     public boolean deleteDocument(String id, String username) {
         Optional<DocumentEntity> opt = documentRepository.findById(id);
         if (opt.isPresent()) {
@@ -234,30 +236,28 @@ public class DocumentService {
                     documentVersionRepository.save(latest);
                 }
 
-                try {
-                    DocumentVersion latest = latestOpt.orElse(null);
-                    DeletedDocument delDoc = deletedDocumentRepository.findByOriginalMasterId(master.getId())
-                            .orElseGet(() -> DeletedDocument.builder().originalMasterId(master.getId()).build());
-                    delDoc.setDocumentCode(master.getDocumentCode());
-                    delDoc.setProcessId(master.getProcessId());
-                    delDoc.setProcessName(master.getProcessName());
-                    delDoc.setProcessGroup(master.getProcessGroup());
-                    delDoc.setCategory(master.getCategory());
-                    delDoc.setDocumentName(master.getDocumentName());
-                    delDoc.setDescription(master.getDescription());
-                    delDoc.setCurrentVersion(master.getCurrentVersion());
-                    delDoc.setFileName(latest != null ? latest.getFileName() : doc.getFileName());
-                    delDoc.setFileType(latest != null ? latest.getFileType() : doc.getFileType());
-                    delDoc.setMimeType(latest != null ? latest.getMimeType() : null);
-                    delDoc.setFileSize(latest != null ? latest.getFileSize() : doc.getFileSize());
-                    delDoc.setFileData(latest != null ? latest.getFileData() : null);
-                    delDoc.setChecksum(latest != null ? latest.getChecksum() : null);
-                    delDoc.setCreatedBy(master.getCreatedBy());
-                    delDoc.setCreatedDate(master.getCreatedDate());
-                    delDoc.setDeletedBy(username != null ? username : "admin");
-                    delDoc.setDeletedDate(LocalDateTime.now());
-                    deletedDocumentRepository.save(delDoc);
-                } catch (Exception ignored) {}
+                DocumentVersion latest = latestOpt.orElse(null);
+                DeletedDocument delDoc = deletedDocumentRepository.findByOriginalMasterId(master.getId())
+                        .orElseGet(() -> DeletedDocument.builder().originalMasterId(master.getId()).build());
+                delDoc.setDocumentCode(master.getDocumentCode());
+                delDoc.setProcessId(master.getProcessId());
+                delDoc.setProcessName(master.getProcessName());
+                delDoc.setProcessGroup(master.getProcessGroup());
+                delDoc.setCategory(master.getCategory() != null && !master.getCategory().isBlank() ? master.getCategory() : (doc.getCategory() != null ? doc.getCategory() : "General"));
+                delDoc.setDocumentName(master.getDocumentName() != null && !master.getDocumentName().isBlank() ? master.getDocumentName() : (doc.getDocumentName() != null ? doc.getDocumentName() : "Untitled Document"));
+                delDoc.setDescription(master.getDescription() != null ? master.getDescription() : doc.getDescription());
+                delDoc.setCurrentVersion(master.getCurrentVersion() != null ? master.getCurrentVersion() : doc.getVersion());
+                delDoc.setFileName(latest != null ? latest.getFileName() : doc.getFileName());
+                delDoc.setFileType(latest != null ? latest.getFileType() : doc.getFileType());
+                delDoc.setMimeType(latest != null ? latest.getMimeType() : null);
+                delDoc.setFileSize(latest != null ? latest.getFileSize() : doc.getFileSize());
+                delDoc.setFileData(latest != null ? latest.getFileData() : null);
+                delDoc.setChecksum(latest != null ? latest.getChecksum() : null);
+                delDoc.setCreatedBy(master.getCreatedBy());
+                delDoc.setCreatedDate(master.getCreatedDate());
+                delDoc.setDeletedBy(username != null ? username : "admin");
+                delDoc.setDeletedDate(master.getDeletedDate() != null ? master.getDeletedDate() : LocalDateTime.now());
+                deletedDocumentRepository.save(delDoc);
             }
 
             // Optionally keep the physical file for archival purposes; delete if desired
