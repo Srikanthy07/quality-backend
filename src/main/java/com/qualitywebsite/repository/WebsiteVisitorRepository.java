@@ -38,6 +38,9 @@ public interface WebsiteVisitorRepository extends JpaRepository<WebsiteVisitor, 
     @Query("SELECT COUNT(DISTINCT v.visitorId) FROM WebsiteVisitor v")
     long countOverallUniqueVisitors();
 
+    @Query("SELECT COUNT(DISTINCT v.sessionId) FROM WebsiteVisitor v")
+    long countOverallSessions();
+
     @Query("SELECT COUNT(DISTINCT v.visitorId) FROM WebsiteVisitor v WHERE v.visitorId IN " +
            "(SELECT v2.visitorId FROM WebsiteVisitor v2 GROUP BY v2.visitorId HAVING COUNT(DISTINCT v2.sessionId) > 1)")
     long countReturningVisitors();

@@ -119,7 +119,7 @@ class WebsiteAnalyticsServiceTest {
     }
 
     @Test
-    void test3_SessionTimeoutCreatesNewSessionWithoutCreatingNewVisitor() {
+    void test3_SessionTimeoutCreatesNewSessionAndIncrementsVisitorsCount() {
         String visitorId = "vid_" + UUID.randomUUID();
         String session1 = "sid_1_" + UUID.randomUUID();
         String session2 = "sid_2_" + UUID.randomUUID();
@@ -129,13 +129,14 @@ class WebsiteAnalyticsServiceTest {
 
         AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
 
-        assertEquals(1, summary.getVisitors(), "Visitor count should remain 1");
+        assertEquals(2, summary.getVisitors(), "Visitors count should be 2 (total sessions)");
         assertEquals(2, summary.getSessions(), "Session count should be 2");
+        assertEquals(1, summary.getUniqueVisitors(), "Unique visitors count should remain 1");
         assertEquals(2, summary.getPageViews(), "Page views count should be 2");
     }
 
     @Test
-    void test4_ReturningVisitorIsCorrectlyIdentified() {
+    void test4_ReturningVisitorIsCorrectlyIdentifiedAndCountsNewVisit() {
         String visitorId = "vid_" + UUID.randomUUID();
         String session1 = "sid_1_" + UUID.randomUUID();
         String session2 = "sid_2_" + UUID.randomUUID();
@@ -145,6 +146,24 @@ class WebsiteAnalyticsServiceTest {
 
         long returningCount = websiteVisitorRepository.countReturningVisitors();
         assertTrue(returningCount >= 1, "Returning visitor should be identified");
+
+        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
+        assertEquals(2, summary.getVisitors(), "Total visits should be 2");
+        assertEquals(1, summary.getUniqueVisitors(), "Unique visitors should be 1");
+    }
+
+    @Test
+    void test4b_PageRefreshAndNavigationDoNotIncrementVisitorsCount() {
+        String visitorId = "vid_" + UUID.randomUUID();
+        String sessionId = "sid_" + UUID.randomUUID();
+
+        websiteAnalyticsService.logVisit(visitorId, sessionId, "/index.html", "Home", "Chrome", "Windows", "Desktop", null, true, true);
+        websiteAnalyticsService.logVisit(visitorId, sessionId, "/index.html", "Home", "Chrome", "Windows", "Desktop", null, false, false);
+        websiteAnalyticsService.logVisit(visitorId, sessionId, "/master-list.html", "Master List", "Chrome", "Windows", "Desktop", null, false, false);
+
+        AnalyticsSummaryDTO summary = websiteAnalyticsService.getSummary("30days", null, null);
+        assertEquals(1, summary.getVisitors(), "Visitors count should be 1 for same session");
+        assertEquals(3, summary.getPageViews(), "Page views count should be 3");
     }
 
     @Test

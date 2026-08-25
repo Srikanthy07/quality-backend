@@ -212,7 +212,7 @@ public class WebsiteAnalyticsService {
         LocalDateTime startUtc = dateRange.getStart();
         LocalDateTime endUtc = dateRange.getEnd();
 
-        long visitors = websiteVisitorRepository.countUniqueVisitorsBetween(startUtc, endUtc);
+        long visitors = websiteVisitorRepository.countSessionsBetween(startUtc, endUtc);
         long sessions = websiteVisitorRepository.countSessionsBetween(startUtc, endUtc);
         long pageViews = websiteVisitorRepository.sumPageViewsBetween(startUtc, endUtc);
         long downloads = documentDownloadLogRepository.countDownloadsBetween(startUtc, endUtc);
@@ -234,9 +234,9 @@ public class WebsiteAnalyticsService {
         LocalDateTime weekStartUtc = weekStartK.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
         LocalDateTime monthStartUtc = monthStartK.withZoneSameInstant(ZONE_UTC).toLocalDateTime();
 
-        long weeklyVisitors = websiteVisitorRepository.countUniqueVisitorsBetween(weekStartUtc, todayEndUtc);
-        long monthlyVisitors = websiteVisitorRepository.countUniqueVisitorsBetween(monthStartUtc, todayEndUtc);
-        long overallVisitors = websiteVisitorRepository.countOverallUniqueVisitors();
+        long weeklyVisitors = websiteVisitorRepository.countSessionsBetween(weekStartUtc, todayEndUtc);
+        long monthlyVisitors = websiteVisitorRepository.countSessionsBetween(monthStartUtc, todayEndUtc);
+        long overallVisitors = websiteVisitorRepository.countOverallSessions();
         long uniqueVisitors = websiteVisitorRepository.countOverallUniqueVisitors();
         long returningVisitors = websiteVisitorRepository.countReturningVisitors();
         long totalDownloads = documentDownloadLogRepository.countDownloadsBetween(LocalDateTime.of(2000, 1, 1, 0, 0), todayEndUtc);
@@ -278,7 +278,6 @@ public class WebsiteAnalyticsService {
             String dateStr = toKolkata(v.getVisitTime()).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
             DailyVisitorDTO dto = map.get(dateStr);
             if (dto != null) {
-                dto.setTotalVisits(dto.getTotalVisits() + 1);
                 dto.setPageViews(dto.getPageViews() + (v.getPageViews() != null ? v.getPageViews() : 1));
             }
         }
@@ -288,9 +287,11 @@ public class WebsiteAnalyticsService {
             ZonedDateTime dStartUtc = dKolkata.atStartOfDay(ZONE_KOLKATA).withZoneSameInstant(ZONE_UTC);
             ZonedDateTime dEndUtc = dKolkata.atTime(LocalTime.MAX).atZone(ZONE_KOLKATA).withZoneSameInstant(ZONE_UTC);
 
+            long totalVisits = websiteVisitorRepository.countSessionsBetween(dStartUtc.toLocalDateTime(), dEndUtc.toLocalDateTime());
             long u = websiteVisitorRepository.countUniqueVisitorsBetween(dStartUtc.toLocalDateTime(), dEndUtc.toLocalDateTime());
             DailyVisitorDTO dto = map.get(dStr);
             if (dto != null) {
+                dto.setTotalVisits(totalVisits);
                 dto.setUniqueVisitors(u);
             }
         }
