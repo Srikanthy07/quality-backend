@@ -20,7 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.test.context.support.WithMockUser;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -604,5 +609,62 @@ class PublicDmsDownloadTest {
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("Assessment_Questionnaires.xlsx")))
                 .andExpect(header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(xlsxBytes.length)));
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void test13_AdminArchiveAndPermanentDeleteWorkflowStandardization() throws Exception {
+        // Create an active document for Generic Templates
+        DocumentMaster master = DocumentMaster.builder()
+                .documentCode("CODE-GT-ARCHIVE")
+                .processId("GLOBAL")
+                .category("Generic Templates")
+                .documentName("Archivable Generic Template")
+                .status("APPROVED")
+                .build();
+        master = documentMasterRepository.save(master);
+
+        DocumentVersion version = DocumentVersion.builder()
+                .documentMaster(master)
+                .version("1.0")
+                .fileName("Archivable_Generic_Template.docx")
+                .fileType("DOCX")
+                .mimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                .fileSize(100L)
+                .fileData("gt bytes".getBytes())
+                .checksum("sha256_gt_arch_" + UUID.randomUUID())
+                .approvalStatus("APPROVED")
+                .isLatest(true)
+                .build();
+        documentVersionRepository.save(version);
+
+        // 1. Initial status -> ACTIVE / APPROVED, returned in public endpoints
+        mockMvc.perform(get("/api/public/generic-templates").secure(true))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].documentName", hasItem("Archivable Generic Template")));
+
+        // 2. Perform Archive request (First Delete Action)
+        mockMvc.perform(post("/api/admin/dms/documents/" + master.getId() + "/archive")
+                .with(csrf())
+                .secure(true))
+                .andExpect(status().isOk());
+
+        // Verify document status changed to ARCHIVED and is excluded from active public listing
+        DocumentMaster archivedMaster = documentMasterRepository.findById(master.getId()).orElseThrow();
+        assertEquals("ARCHIVED", archivedMaster.getStatus());
+
+        mockMvc.perform(get("/api/public/generic-templates").secure(true))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].documentName", not(hasItem("Archivable Generic Template"))));
+
+        // 3. Perform Permanent Delete request (Explicit Second Action)
+        mockMvc.perform(post("/api/admin/dms/documents/" + master.getId() + "/delete-permanently")
+                .with(csrf())
+                .secure(true))
+                .andExpect(status().isOk());
+
+        DocumentMaster permDeletedMaster = documentMasterRepository.findById(master.getId()).orElseThrow();
+        assertEquals("DELETED", permDeletedMaster.getStatus());
     }
 }

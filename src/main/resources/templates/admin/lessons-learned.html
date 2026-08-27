@@ -65,6 +65,13 @@
               <i class="fas fa-search"></i>
               <input type="text" id="search-input" placeholder="Search Lessons Learned..."/>
             </div>
+
+            <select id="status-filter" class="filter-select">
+              <option value="ACTIVE" selected>Active Documents</option>
+              <option value="ARCHIVED">Archived Documents</option>
+              <option value="ALL">All Documents</option>
+            </select>
+
             <a href="/admin/documents/upload?category=Lessons%20Learned" class="btn-teal"><i class="fas fa-plus"></i> Upload Lessons Learned</a>
           </div>
         </div>
@@ -91,21 +98,82 @@
     </div>
   </main>
 
+  <!-- Archive Confirmation Modal -->
+  <div class="modal-overlay" id="archive-modal">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Archive Document</h3>
+        <button class="modal-close" onclick="closeArchiveModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:28px 24px;">
+        <div style="width:56px; height:56px; border-radius:50%; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px auto;">
+          <i class="fas fa-archive"></i>
+        </div>
+        <h4 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:8px;" id="archive-modal-prompt">
+          Are you sure you want to archive this document?
+        </h4>
+        <p style="font-size:0.9rem; color:#64748b; margin:0; line-height:1.5;">
+          The document will be moved to ARCHIVED status and removed from active documents. It can be permanently deleted later.
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:12px;">
+        <button type="button" class="btn-outline" id="archive-modal-cancel-btn" onclick="closeArchiveModal()">Cancel</button>
+        <button type="button" class="btn-teal" id="archive-modal-confirm-btn" onclick="confirmArchiveDoc()" style="background:#dc2626; border-color:#dc2626; color:#fff;">Archive</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Permanent Delete Confirmation Modal -->
+  <div class="modal-overlay" id="perm-delete-modal">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Permanently Delete Document?</h3>
+        <button class="modal-close" onclick="closePermanentDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:28px 24px;">
+        <div style="width:56px; height:56px; border-radius:50%; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px auto;">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h4 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:8px;" id="perm-delete-modal-prompt">
+          Do you want to permanently delete this document? This action cannot be undone.
+        </h4>
+        <p style="font-size:0.9rem; color:#64748b; margin:0; line-height:1.5;">
+          The document will be permanently removed from the system. It will no longer be available on the public website.
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:12px;">
+        <button type="button" class="btn-outline" id="perm-delete-cancel-btn" onclick="closePermanentDeleteModal()">Cancel</button>
+        <button type="button" class="btn-teal" id="perm-delete-confirm-btn" onclick="confirmPermanentDeleteDoc()" style="background:#dc2626; border-color:#dc2626; color:#fff;">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/admin/js/admin-notifications.js"></script>
   <script th:inline="javascript">
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
 
     let docs = [];
+    let documentIdToArchive = null;
+    let targetPermDeleteDocId = null;
+    let isArchiving = false;
 
-    document.addEventListener('DOMContentLoaded', loadData);
-    document.getElementById('search-input').addEventListener('input', render);
+    document.addEventListener('DOMContentLoaded', function() {
+      loadData();
+      document.getElementById('search-input').addEventListener('input', render);
+      document.getElementById('status-filter').addEventListener('change', loadData);
+    });
 
     function loadData() {
-      fetch('/api/admin/documents?category=Lessons%20Learned')
+      const statusVal = document.getElementById('status-filter') ? document.getElementById('status-filter').value : 'ACTIVE';
+      fetch('/api/admin/documents?category=Lessons%20Learned&status=' + encodeURIComponent(statusVal))
         .then(res => res.json())
         .then(data => {
           docs = data || [];
+          render();
+        })
+        .catch(() => {
+          docs = [];
           render();
         });
     }
@@ -125,6 +193,11 @@
       filtered.forEach(d => {
         const tr = document.createElement('tr');
         const lastMod = d.updatedAt ? new Date(d.updatedAt).toLocaleDateString() : 'N/A';
+        const isArchivedOrDeleted = (d.status === 'ARCHIVED' || d.status === 'DELETED');
+
+        const deleteActionBtn = isArchivedOrDeleted
+          ? `<button class="action-btn delete" title="Delete Permanently" onclick="openPermanentDeleteModal('${d.id}', '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>`
+          : `<button class="action-btn delete" title="Archive / Delete" onclick="deleteDoc('${d.id}', '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>`;
 
         tr.innerHTML = `
           <td><strong>${escapeHtml(d.documentName || '')}</strong></td>
@@ -135,7 +208,7 @@
           <td>
             <div class="actions-cell">
               ${d.filePath ? `<a class="action-btn" title="Download" href="${d.filePath}" download><i class="fas fa-download"></i></a>` : ''}
-              <button class="action-btn delete" title="Delete" onclick="deleteDoc('${d.id}', '${escapeHtml(d.documentName)}')"><i class="fas fa-trash-alt"></i></button>
+              ${deleteActionBtn}
             </div>
           </td>
         `;
@@ -144,12 +217,123 @@
     }
 
     function deleteDoc(id, name) {
-      if (confirm(`Delete "${name}"?`)) {
-        fetch(`/api/admin/documents/${id}`, {
-          method: 'DELETE',
-          headers: { [csrfHeader]: csrfToken }
-        }).then(res => { if (res.ok) loadData(); });
+      openArchiveModal(id, name);
+    }
+
+    function openArchiveModal(id, name) {
+      documentIdToArchive = id;
+      isArchiving = false;
+      const promptEl = document.getElementById('archive-modal-prompt');
+      if (promptEl && name) {
+        promptEl.textContent = `Are you sure you want to archive "${name}"?`;
+      } else if (promptEl) {
+        promptEl.textContent = "Are you sure you want to archive this document?";
       }
+      const confirmBtn = document.getElementById('archive-modal-confirm-btn');
+      const cancelBtn  = document.getElementById('archive-modal-cancel-btn');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Archive';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+      }
+      document.getElementById('archive-modal').classList.add('active');
+    }
+
+    function closeArchiveModal() {
+      if (isArchiving) return;
+      document.getElementById('archive-modal').classList.remove('active');
+      documentIdToArchive = null;
+    }
+
+    function confirmArchiveDoc() {
+      if (!documentIdToArchive || isArchiving) return;
+      isArchiving = true;
+
+      const confirmBtn = document.getElementById('archive-modal-confirm-btn');
+      const cancelBtn  = document.getElementById('archive-modal-cancel-btn');
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Archiving...';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+      }
+
+      fetch(`/api/admin/dms/documents/${documentIdToArchive}/archive`, {
+        method: 'POST',
+        headers: { [csrfHeader]: csrfToken }
+      })
+      .then(async res => {
+        isArchiving = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (cancelBtn)  cancelBtn.disabled = false;
+
+        if (res.ok) {
+          closeArchiveModal();
+          if (typeof adminNotify === 'function') {
+            adminNotify({ title: 'Document archived successfully', type: 'success' });
+          }
+          loadData();
+        } else {
+          closeArchiveModal();
+          if (typeof adminNotify === 'function') {
+            adminNotify({ title: 'Failed to archive document', type: 'danger' });
+          }
+        }
+      })
+      .catch(() => {
+        isArchiving = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (cancelBtn)  cancelBtn.disabled = false;
+        closeArchiveModal();
+        if (typeof adminNotify === 'function') {
+          adminNotify({ title: 'Network error while archiving document', type: 'danger' });
+        }
+      });
+    }
+
+    function openPermanentDeleteModal(id, name) {
+      targetPermDeleteDocId = id;
+      const promptEl = document.getElementById('perm-delete-modal-prompt');
+      if (promptEl && name) {
+        promptEl.textContent = `Do you want to permanently delete "${name}"? This action cannot be undone.`;
+      }
+      document.getElementById('perm-delete-modal').classList.add('active');
+    }
+
+    function closePermanentDeleteModal() {
+      targetPermDeleteDocId = null;
+      document.getElementById('perm-delete-modal').classList.remove('active');
+    }
+
+    function confirmPermanentDeleteDoc() {
+      if (!targetPermDeleteDocId) return;
+      const id = targetPermDeleteDocId;
+      closePermanentDeleteModal();
+
+      fetch(`/api/admin/dms/documents/${id}/delete-permanently`, {
+        method: 'POST',
+        headers: { [csrfHeader]: csrfToken }
+      })
+      .then(async res => {
+        if (res.ok) {
+          if (typeof adminNotify === 'function') {
+            adminNotify({ title: 'Document permanently deleted', type: 'success' });
+          }
+          loadData();
+        } else {
+          if (typeof adminNotify === 'function') {
+            adminNotify({ title: 'Failed to delete document permanently', type: 'danger' });
+          }
+        }
+      })
+      .catch(() => {
+        if (typeof adminNotify === 'function') {
+          adminNotify({ title: 'Network error while deleting document', type: 'danger' });
+        }
+      });
     }
 
     function escapeHtml(str) {
