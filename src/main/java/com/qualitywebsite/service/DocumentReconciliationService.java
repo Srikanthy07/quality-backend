@@ -38,7 +38,53 @@ public class DocumentReconciliationService {
     @Transactional
     public List<DocumentReconciliationItemDTO> runOneTimeReconciliation() {
         log.info("Starting safe idempotent document reconciliation across all database records...");
+        recoverIncorrectlyDeletedDocuments();
         return reconcileAllDocuments();
+    }
+
+    @Transactional
+    public List<DocumentMaster> recoverIncorrectlyDeletedDocuments() {
+        List<DocumentMaster> recovered = new ArrayList<>();
+        List<DocumentMaster> deletedMasters = documentMasterRepository.findByStatusIgnoreCase("DELETED");
+
+        for (DocumentMaster master : deletedMasters) {
+            Long masterId = master.getId();
+            Optional<DeletedDocument> delOpt = deletedDocumentRepository.findByOriginalMasterId(masterId);
+            if (delOpt.isEmpty() && master.getDocumentCode() != null && !master.getDocumentCode().isBlank()) {
+                delOpt = deletedDocumentRepository.findByDocumentCode(master.getDocumentCode());
+            }
+
+            // Evidence check:
+            // 1. No explicit DeletedDocument record exists matching this masterId or documentCode.
+            // 2. A DeletedDocument record exists with the exact same documentName under a DIFFERENT originalMasterId
+            //    (proving this document was incorrectly auto-deleted by the old name-matching reconciliation bug).
+            if (delOpt.isEmpty() && master.getDocumentName() != null && !master.getDocumentName().isBlank()) {
+                Optional<DeletedDocument> nameMatchOpt = deletedDocumentRepository.findByDocumentNameIgnoreCase(master.getDocumentName());
+                if (nameMatchOpt.isPresent() && !Objects.equals(nameMatchOpt.get().getOriginalMasterId(), masterId)) {
+                    log.info("[DOCUMENT RECOVERY] Found evidence of incorrect auto-deletion for Master ID: {}, Name: '{}', Code: '{}'. Restoring status to APPROVED.",
+                            masterId, master.getDocumentName(), master.getDocumentCode());
+
+                    master.setStatus("APPROVED");
+                    master.setDeletedBy(null);
+                    master.setDeletedDate(null);
+                    master.setUpdatedDate(LocalDateTime.now());
+                    master = documentMasterRepository.save(master);
+
+                    List<DocumentVersion> versions = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(masterId);
+                    for (DocumentVersion v : versions) {
+                        if ("DELETED".equalsIgnoreCase(v.getApprovalStatus())) {
+                            v.setApprovalStatus("APPROVED");
+                            documentVersionRepository.save(v);
+                        }
+                    }
+                    recovered.add(master);
+                }
+            }
+        }
+        if (!recovered.isEmpty()) {
+            log.info("[DOCUMENT RECOVERY] Successfully recovered {} incorrectly auto-deleted master document(s).", recovered.size());
+        }
+        return recovered;
     }
 
     @Transactional
@@ -101,24 +147,20 @@ public class DocumentReconciliationService {
 
         Set<String> actions = new LinkedHashSet<>();
 
-        // 1. Check if DeletedDocument archive record exists or if legacy entity is soft-deleted
+        // 1. Check if DeletedDocument archive record exists strictly by originalMasterId or exact documentCode
+        // DO NOT match by documentName alone, as multiple distinct documents can share identical display names.
         Optional<DeletedDocument> delOpt = deletedDocumentRepository.findByOriginalMasterId(masterId);
-        if (delOpt.isEmpty() && master.getDocumentCode() != null) {
+        if (delOpt.isEmpty() && master.getDocumentCode() != null && !master.getDocumentCode().isBlank()) {
             delOpt = deletedDocumentRepository.findByDocumentCode(master.getDocumentCode());
         }
-        if (delOpt.isEmpty() && master.getDocumentName() != null) {
-            delOpt = deletedDocumentRepository.findByDocumentNameIgnoreCase(master.getDocumentName());
-        }
 
-        Optional<DocumentEntity> legacyOpt = documentRepository.findByDocumentNameIgnoreCase(docName).stream().findFirst();
-        boolean legacySoftDeleted = legacyOpt.isPresent() && Boolean.FALSE.equals(legacyOpt.get().getIsActive());
-
-        // TASK 4 & 8: ASPICE v3.1 vs v4.0 & Deleted Document Status Reconciliation
-        boolean shouldBeDeleted = delOpt.isPresent() || legacySoftDeleted || "DELETED".equalsIgnoreCase(origStatus);
+        // A master document is considered deleted ONLY if an explicit archive record exists matching its masterId or documentCode,
+        // or if its status was explicitly set to 'DELETED' by a deletion operation.
+        boolean shouldBeDeleted = delOpt.isPresent() || "DELETED".equalsIgnoreCase(origStatus);
 
         if (shouldBeDeleted && !"DELETED".equalsIgnoreCase(master.getStatus())) {
-            log.info("[DOCUMENT RECONCILIATION] Document: {}, Master ID: {}, Previous status: {}, Correct status: DELETED, Action: STATUS_CORRECTED",
-                    docName, masterId, origStatus);
+            log.info("[DOCUMENT RECONCILIATION] Document: '{}', Master ID: {}, Code: {}, Previous status: {}, Correct status: DELETED, Action: STATUS_CORRECTED (Matched DeletedDocument ID: {})",
+                    docName, masterId, code, origStatus, delOpt.map(DeletedDocument::getId).orElse(null));
             master.setStatus("DELETED");
             if (master.getDeletedBy() == null) {
                 master.setDeletedBy(delOpt.map(DeletedDocument::getDeletedBy).orElse("admin"));

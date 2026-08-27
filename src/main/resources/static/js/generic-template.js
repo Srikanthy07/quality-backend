@@ -12,12 +12,43 @@
     return 'sd-doc-badge--pdf';
   }
 
-  function typeLabel(type) {
-    var t = String(type || '').toUpperCase();
-    if (t === 'DOCX') return 'DOC';
-    if (t === 'PPTX') return 'PPT';
-    if (t === 'XLSX') return 'XLS';
-    return t.substring(0, 4);
+  function getDocFormatExtension(doc) {
+    if (!doc) return '';
+    var fname = (doc.fileName || doc.filename || '').trim();
+    if (fname && fname.indexOf('.') !== -1) {
+      var ext = fname.split('.').pop().trim().toUpperCase();
+      if (ext && ext.indexOf('/') === -1 && ext.indexOf('\\') === -1) {
+        return ext;
+      }
+    }
+    var ftype = (doc.fileType || doc.type || '').trim().toUpperCase();
+    if (ftype) {
+      if (ftype.startsWith('.')) ftype = ftype.substring(1);
+      return ftype;
+    }
+    return '';
+  }
+
+  function typeLabel(typeOrDoc) {
+    var ext = (typeof typeOrDoc === 'object' && typeOrDoc !== null)
+      ? getDocFormatExtension(typeOrDoc)
+      : String(typeOrDoc || '').trim().toUpperCase();
+    if (ext.startsWith('.')) ext = ext.substring(1);
+    if (ext === 'PDF') return 'PDF';
+    if (ext === 'XLSX' || ext === 'XLS') return 'XLS';
+    if (ext === 'DOCX' || ext === 'DOC') return 'DOC';
+    if (ext === 'PPTX' || ext === 'PPT') return 'PPT';
+    if (ext === 'HTML' || ext === 'HTM') return 'HTML';
+    return 'DOC';
+  }
+
+  function getBadgeClass(typeOrDoc) {
+    var label = typeLabel(typeOrDoc);
+    if (label === 'XLS') return 'sd-doc-badge--xls';
+    if (label === 'PPT') return 'sd-doc-badge--ppt';
+    if (label === 'DOC') return 'sd-doc-badge--doc';
+    if (label === 'HTML') return 'sd-doc-badge--html';
+    return 'sd-doc-badge--pdf';
   }
 
   function filenameFromUrl(url) {
@@ -26,9 +57,8 @@
 
   function isPdfDoc(doc, filePath) {
     if (!doc) return false;
-    var type = String(doc.type || '').toUpperCase();
-    var path = String(filePath || '').toLowerCase();
-    return type === 'PDF' || path.slice(-4) === '.pdf';
+    var ext = getDocFormatExtension(doc);
+    return ext === 'PDF';
   }
 
   function buildDocCard(doc) {
@@ -39,18 +69,15 @@
       card.setAttribute('data-doc-id', doc.id);
     }
 
-    var type = doc.type || (doc.filePath || '').split('.').pop() || 'DOC';
-    type = type.toUpperCase();
-
     var badge = document.createElement('div');
-    badge.className = 'sd-doc-badge ' + getBadgeClass(type);
-    badge.textContent = typeLabel(type);
+    badge.className = 'sd-doc-badge ' + getBadgeClass(doc);
+    badge.textContent = typeLabel(doc);
 
     var info = document.createElement('div');
     info.className = 'sd-doc-info';
 
     var filePath = (doc.filePath && typeof doc.filePath === 'string') ? doc.filePath.trim() : '';
-    var filename = filePath ? filenameFromUrl(filePath) : '';
+    var filename = doc.fileName || (filePath && !filePath.startsWith('/api/') ? filenameFromUrl(filePath) : '');
 
     var label = document.createElement('div');
     label.className = 'sd-doc-label';
@@ -70,7 +97,7 @@
       info.appendChild(desc);
     }
 
-    if (filePath) {
+    if (filename) {
       var fname = document.createElement('span');
       fname.className = 'sd-doc-filename';
       fname.textContent = filename;

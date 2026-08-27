@@ -47,6 +47,8 @@ public interface DocumentMasterRepository extends JpaRepository<DocumentMaster, 
 
     List<DocumentMaster> findByStatus(String status);
 
+    List<DocumentMaster> findByStatusIgnoreCase(String status);
+
     List<DocumentMaster> findByCategoryIgnoreCaseAndStatus(String category, String status);
 
     List<DocumentMaster> findByStatusNot(String status);

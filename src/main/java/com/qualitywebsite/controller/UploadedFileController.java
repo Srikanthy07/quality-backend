@@ -41,17 +41,17 @@ public class UploadedFileController {
     @Value("${app.upload.dir:./uploaded-documents}")
     private String uploadDir;
 
-    @GetMapping("/api/public/dms/download/{versionId}")
+    @org.springframework.web.bind.annotation.RequestMapping(value = "/api/public/dms/download/{versionId}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.HEAD})
     public ResponseEntity<byte[]> downloadDmsVersion(@PathVariable Long versionId, HttpServletRequest request) {
         trackDownloadByVersionId(versionId, request);
-        return dmsDocumentService.streamPublicVersion(versionId);
+        return dmsDocumentService.streamPublicVersion(versionId, request);
     }
 
-    @GetMapping("/api/public/dms/document/{masterId}/download")
+    @org.springframework.web.bind.annotation.RequestMapping(value = "/api/public/dms/document/{masterId}/download", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.HEAD})
     public ResponseEntity<byte[]> downloadDmsLatest(@PathVariable Long masterId, HttpServletRequest request) {
         Optional<DocumentVersion> latestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId);
         latestOpt.ifPresent(v -> trackDownload(v.getDocumentMaster().getId(), v.getDocumentMaster().getDocumentName(), v.getDocumentMaster().getCategory(), request));
-        return dmsDocumentService.streamPublicLatest(masterId);
+        return dmsDocumentService.streamPublicLatest(masterId, request);
     }
 
     @GetMapping("/uploaded-documents/{fileName:.+}")

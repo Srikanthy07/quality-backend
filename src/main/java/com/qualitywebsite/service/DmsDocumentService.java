@@ -28,6 +28,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -385,6 +386,11 @@ public class DmsDocumentService {
 
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> streamPublicVersion(Long versionId) {
+        return streamPublicVersion(versionId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> streamPublicVersion(Long versionId, jakarta.servlet.http.HttpServletRequest request) {
         DocumentVersion version = documentVersionRepository.findById(versionId).orElse(null);
         if (version == null) {
             log.warn("[Public DMS Download] Version ID {} not found", versionId);
@@ -400,11 +406,16 @@ public class DmsDocumentService {
             return ResponseEntity.notFound().build();
         }
 
-        return buildStreamResponse(version);
+        return buildStreamResponse(version, request);
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> streamPublicLatest(Long masterId) {
+        return streamPublicLatest(masterId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> streamPublicLatest(Long masterId, jakarta.servlet.http.HttpServletRequest request) {
         DocumentMaster master = documentMasterRepository.findById(masterId).orElse(null);
         if (master == null || !"APPROVED".equalsIgnoreCase(master.getStatus())) {
             log.warn("[Public DMS Download] Master document ID {} not found or not approved", masterId);
@@ -413,14 +424,26 @@ public class DmsDocumentService {
 
         DocumentVersion latest = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId).orElse(null);
         if (latest == null || !"APPROVED".equalsIgnoreCase(latest.getApprovalStatus())) {
-            log.warn("[Public DMS Download] Latest version for master ID {} is not approved or active", masterId);
+            List<DocumentVersion> versions = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(masterId);
+            latest = versions.stream()
+                    .filter(v -> "APPROVED".equalsIgnoreCase(v.getApprovalStatus()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (latest == null) {
+            log.warn("[Public DMS Download] No approved version found for master ID {}", masterId);
             return ResponseEntity.notFound().build();
         }
 
-        return buildStreamResponse(latest);
+        return buildStreamResponse(latest, request);
     }
 
     private ResponseEntity<byte[]> buildStreamResponse(DocumentVersion version) {
+        return buildStreamResponse(version, null);
+    }
+
+    private ResponseEntity<byte[]> buildStreamResponse(DocumentVersion version, jakarta.servlet.http.HttpServletRequest request) {
         byte[] data = version.getFileData();
         if (data == null || data.length == 0) {
             return ResponseEntity.notFound().build();
@@ -436,10 +459,22 @@ public class DmsDocumentService {
         headers.setContentType(MediaType.parseMediaType(mimeType));
         headers.setContentLength(data.length);
 
+        org.springframework.http.ContentDisposition contentDisposition;
         if ("application/pdf".equalsIgnoreCase(mimeType) || "PDF".equalsIgnoreCase(version.getFileType())) {
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + version.getFileName() + "\"");
+            contentDisposition = org.springframework.http.ContentDisposition.builder("inline")
+                    .filename(version.getFileName())
+                    .build();
         } else {
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + version.getFileName() + "\"");
+            contentDisposition = org.springframework.http.ContentDisposition.builder("attachment")
+                    .filename(version.getFileName())
+                    .build();
+        }
+        headers.setContentDisposition(contentDisposition);
+
+        if (request != null && "HEAD".equalsIgnoreCase(request.getMethod())) {
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .build();
         }
 
         return ResponseEntity.ok()

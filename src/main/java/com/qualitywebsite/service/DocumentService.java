@@ -37,18 +37,89 @@ public class DocumentService {
     private String uploadDir;
 
     public List<DocumentEntity> getAllDocuments() {
-        return documentRepository.findAllByIsActiveTrue().stream()
-                .filter(this::isMasterApproved)
-                .map(this::syncVersionFromMaster)
-                .toList();
+        List<DocumentEntity> list = new ArrayList<>();
+        Set<Long> syncedMasterIds = new HashSet<>();
+
+        List<DocumentEntity> legacyList = documentRepository.findAllByIsActiveTrue();
+        for (DocumentEntity doc : legacyList) {
+            if (isMasterApproved(doc)) {
+                DocumentEntity synced = syncVersionFromMaster(doc);
+                list.add(synced);
+                findMatchingMaster(doc).ifPresent(m -> syncedMasterIds.add(m.getId()));
+            }
+        }
+
+        List<DocumentMaster> approvedMasters = documentMasterRepository.findByStatusIgnoreCase("APPROVED");
+        for (DocumentMaster master : approvedMasters) {
+            if (!syncedMasterIds.contains(master.getId())) {
+                Optional<DocumentVersion> versionOpt = findLatestApprovedVersion(master.getId());
+                if (versionOpt.isPresent()) {
+                    DocumentVersion version = versionOpt.get();
+                    DocumentEntity dmsDoc = DocumentEntity.builder()
+                            .id("DMS-" + master.getId())
+                            .documentName(master.getDocumentName())
+                            .process(master.getProcessId())
+                            .processGroup(master.getProcessGroup())
+                            .category(master.getCategory())
+                            .version(version.getVersion() != null ? version.getVersion() : master.getCurrentVersion())
+                            .fileType(version.getFileType())
+                            .filePath("/api/public/dms/download/" + version.getId())
+                            .fileName(version.getFileName())
+                            .description(master.getDescription())
+                            .isActive(true)
+                            .build();
+                    list.add(dmsDoc);
+                }
+            }
+        }
+        return list;
     }
 
     // Search and filter documents by query and category
     public List<DocumentEntity> searchAndFilter(String query, String category) {
-        return documentRepository.searchAndFilter(query, category).stream()
-                .filter(this::isMasterApproved)
-                .map(this::syncVersionFromMaster)
-                .toList();
+        List<DocumentEntity> list = new ArrayList<>();
+        Set<Long> syncedMasterIds = new HashSet<>();
+
+        List<DocumentEntity> legacyList = documentRepository.searchAndFilter(query, category);
+        for (DocumentEntity doc : legacyList) {
+            if (isMasterApproved(doc)) {
+                DocumentEntity synced = syncVersionFromMaster(doc);
+                list.add(synced);
+                findMatchingMaster(doc).ifPresent(m -> syncedMasterIds.add(m.getId()));
+            }
+        }
+
+        List<DocumentMaster> approvedMasters = documentMasterRepository.findByStatusIgnoreCase("APPROVED");
+        for (DocumentMaster master : approvedMasters) {
+            if (!syncedMasterIds.contains(master.getId())) {
+                boolean matchesCategory = (category == null || category.trim().isEmpty() || master.getCategory().equalsIgnoreCase(category.trim()));
+                boolean matchesQuery = (query == null || query.trim().isEmpty()
+                        || (master.getDocumentName() != null && master.getDocumentName().toLowerCase().contains(query.trim().toLowerCase()))
+                        || (master.getProcessId() != null && master.getProcessId().toLowerCase().contains(query.trim().toLowerCase())));
+
+                if (matchesCategory && matchesQuery) {
+                    Optional<DocumentVersion> versionOpt = findLatestApprovedVersion(master.getId());
+                    if (versionOpt.isPresent()) {
+                        DocumentVersion version = versionOpt.get();
+                        DocumentEntity dmsDoc = DocumentEntity.builder()
+                                .id("DMS-" + master.getId())
+                                .documentName(master.getDocumentName())
+                                .process(master.getProcessId())
+                                .processGroup(master.getProcessGroup())
+                                .category(master.getCategory())
+                                .version(version.getVersion() != null ? version.getVersion() : master.getCurrentVersion())
+                                .fileType(version.getFileType())
+                                .filePath("/api/public/dms/download/" + version.getId())
+                                .fileName(version.getFileName())
+                                .description(master.getDescription())
+                                .isActive(true)
+                                .build();
+                        list.add(dmsDoc);
+                    }
+                }
+            }
+        }
+        return list;
     }
 
     public Optional<DocumentEntity> getById(String id) {
@@ -58,47 +129,101 @@ public class DocumentService {
     }
 
     public List<DocumentEntity> getByCategory(String category) {
-        return documentRepository.findByCategoryIgnoreCaseAndIsActiveTrue(category).stream()
-                .filter(this::isMasterApproved)
-                .map(this::syncVersionFromMaster)
-                .toList();
+        List<DocumentEntity> list = new ArrayList<>();
+        Set<Long> syncedMasterIds = new HashSet<>();
+
+        List<DocumentEntity> legacyList = documentRepository.findByCategoryIgnoreCaseAndIsActiveTrue(category);
+        for (DocumentEntity doc : legacyList) {
+            if (isMasterApproved(doc)) {
+                DocumentEntity synced = syncVersionFromMaster(doc);
+                list.add(synced);
+                findMatchingMaster(doc).ifPresent(m -> syncedMasterIds.add(m.getId()));
+            }
+        }
+
+        List<DocumentMaster> approvedMasters = documentMasterRepository.findByStatusIgnoreCase("APPROVED");
+        for (DocumentMaster master : approvedMasters) {
+            if (!syncedMasterIds.contains(master.getId()) && master.getCategory() != null && master.getCategory().equalsIgnoreCase(category)) {
+                Optional<DocumentVersion> versionOpt = findLatestApprovedVersion(master.getId());
+                if (versionOpt.isPresent()) {
+                    DocumentVersion version = versionOpt.get();
+                    DocumentEntity dmsDoc = DocumentEntity.builder()
+                            .id("DMS-" + master.getId())
+                            .documentName(master.getDocumentName())
+                            .process(master.getProcessId())
+                            .processGroup(master.getProcessGroup())
+                            .category(master.getCategory())
+                            .version(version.getVersion() != null ? version.getVersion() : master.getCurrentVersion())
+                            .fileType(version.getFileType())
+                            .filePath("/api/public/dms/download/" + version.getId())
+                            .fileName(version.getFileName())
+                            .description(master.getDescription())
+                            .isActive(true)
+                            .build();
+                    list.add(dmsDoc);
+                }
+            }
+        }
+        return list;
+    }
+
+    public Optional<DocumentVersion> findLatestApprovedVersion(Long masterId) {
+        if (masterId == null) return Optional.empty();
+        Optional<DocumentVersion> isLatestOpt = documentVersionRepository.findByDocumentMasterIdAndIsLatestTrue(masterId);
+        if (isLatestOpt.isPresent() && "APPROVED".equalsIgnoreCase(isLatestOpt.get().getApprovalStatus())) {
+            return isLatestOpt;
+        }
+        List<DocumentVersion> versions = documentVersionRepository.findByDocumentMasterIdOrderByUploadedDateDesc(masterId);
+        return versions.stream()
+                .filter(v -> "APPROVED".equalsIgnoreCase(v.getApprovalStatus()))
+                .findFirst();
     }
 
     public DocumentEntity syncVersionFromMaster(DocumentEntity doc) {
         if (doc == null) return null;
-        Optional<DocumentMaster> masterOpt = documentMasterRepository
-                .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
-                        doc.getProcess(), doc.getCategory(), doc.getDocumentName());
-        if (masterOpt.isEmpty()) {
-            masterOpt = documentMasterRepository.findAll().stream()
-                    .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
-                    .findFirst();
-        }
+        Optional<DocumentMaster> masterOpt = findMatchingMaster(doc);
         if (masterOpt.isPresent()) {
             DocumentMaster master = masterOpt.get();
             if (master.getCurrentVersion() != null && !master.getCurrentVersion().isBlank()) {
                 doc.setVersion(master.getCurrentVersion());
             }
+            Optional<DocumentVersion> versionOpt = findLatestApprovedVersion(master.getId());
+            if (versionOpt.isPresent()) {
+                DocumentVersion version = versionOpt.get();
+                if ("APPROVED".equalsIgnoreCase(master.getStatus())) {
+                    doc.setVersion(version.getVersion());
+                    doc.setFilePath("/api/public/dms/download/" + version.getId());
+                    doc.setFileType(version.getFileType());
+                    doc.setFileName(version.getFileName());
+                }
+            }
         }
         return doc;
+    }
+
+    public Optional<DocumentMaster> findMatchingMaster(DocumentEntity doc) {
+        if (doc == null) return Optional.empty();
+        Optional<DocumentMaster> masterOpt = documentMasterRepository
+                .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
+                        doc.getProcess(), doc.getCategory(), doc.getDocumentName());
+        if (masterOpt.isPresent()) {
+            return masterOpt;
+        }
+        return documentMasterRepository.findAll().stream()
+                .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
+                .filter(m -> "APPROVED".equalsIgnoreCase(m.getStatus()))
+                .findFirst();
     }
 
     public boolean isMasterApproved(DocumentEntity doc) {
         if (doc == null || !Boolean.TRUE.equals(doc.getIsActive())) return false;
         
-        Optional<DocumentMaster> masterOpt = documentMasterRepository
-                .findByProcessIdIgnoreCaseAndCategoryIgnoreCaseAndDocumentNameIgnoreCase(
-                        doc.getProcess(), doc.getCategory(), doc.getDocumentName());
+        Optional<DocumentMaster> masterOpt = findMatchingMaster(doc);
         if (masterOpt.isPresent()) {
             DocumentMaster master = masterOpt.get();
-            return "APPROVED".equalsIgnoreCase(master.getStatus());
-        }
-
-        Optional<DocumentMaster> masterByNameOpt = documentMasterRepository.findAll().stream()
-                .filter(m -> m.getDocumentName() != null && m.getDocumentName().equalsIgnoreCase(doc.getDocumentName()))
-                .findFirst();
-        if (masterByNameOpt.isPresent()) {
-            return "APPROVED".equalsIgnoreCase(masterByNameOpt.get().getStatus());
+            if (!"APPROVED".equalsIgnoreCase(master.getStatus())) return false;
+            Optional<DocumentVersion> latestVer = findLatestApprovedVersion(master.getId());
+            return latestVer.isPresent();
         }
 
         // Phase 3 Hardening Rule: If DMS master cannot be found, public access MUST be denied (return false).

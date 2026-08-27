@@ -119,28 +119,66 @@
     return FORCE_DOWNLOAD_TYPES.indexOf(String(type || '').toUpperCase()) !== -1;
   }
 
-  function getDocType(doc) {
-    if (doc.type) return String(doc.type).toUpperCase();
-    var ext = (doc.filePath || doc.url || '').split('.').pop();
-    return ext ? ext.toUpperCase() : 'DOC';
+  /**
+   * Extract actual file extension case-insensitively.
+   * Primary Source of Truth: doc.fileName
+   * Secondary Fallback: doc.fileType / doc.type
+   */
+  function getDocFormatExtension(doc) {
+    if (!doc) return '';
+
+    // 1. Primary Source of Truth: doc.fileName / doc.filename
+    var fname = (doc.fileName || doc.filename || '').trim();
+    if (fname && fname.indexOf('.') !== -1) {
+      var ext = fname.split('.').pop().trim().toUpperCase();
+      if (ext && ext.indexOf('/') === -1 && ext.indexOf('\\') === -1) {
+        return ext;
+      }
+    }
+
+    // 2. Secondary Fallback: doc.fileType / doc.type
+    var ftype = (doc.fileType || doc.type || '').trim().toUpperCase();
+    if (ftype) {
+      if (ftype.startsWith('.')) ftype = ftype.substring(1);
+      return ftype;
+    }
+
+    return '';
   }
 
-  function getBadgeClass(type) {
-    var t = String(type || '').toUpperCase();
-    if (t === 'XLS' || t === 'XLSX') return 'sd-doc-badge--xls';
-    if (t === 'PPT' || t === 'PPTX') return 'sd-doc-badge--ppt';
-    if (t === 'DOC' || t === 'DOCX') return 'sd-doc-badge--doc';
-    if (t === 'HTML' || t === 'HTM') return 'sd-doc-badge--html';
+  /**
+   * Format mapping:
+   * PDF / .pdf   -> PDF
+   * XLSX / .xlsx -> XLS
+   * XLS / .xls   -> XLS
+   * DOCX / .docx -> DOC
+   * DOC / .doc   -> DOC
+   * PPTX / .pptx -> PPT
+   * PPT / .ppt   -> PPT
+   */
+  function typeLabel(typeOrDoc) {
+    var ext = (typeof typeOrDoc === 'object' && typeOrDoc !== null)
+      ? getDocFormatExtension(typeOrDoc)
+      : String(typeOrDoc || '').trim().toUpperCase();
+
+    if (ext.startsWith('.')) ext = ext.substring(1);
+
+    if (ext === 'PDF') return 'PDF';
+    if (ext === 'XLSX' || ext === 'XLS') return 'XLS';
+    if (ext === 'DOCX' || ext === 'DOC') return 'DOC';
+    if (ext === 'PPTX' || ext === 'PPT') return 'PPT';
+    if (ext === 'HTML' || ext === 'HTM') return 'HTML';
+
+    return 'DOC';
+  }
+
+  function getBadgeClass(typeOrDoc) {
+    var label = typeLabel(typeOrDoc);
+    if (label === 'XLS') return 'sd-doc-badge--xls';
+    if (label === 'PPT') return 'sd-doc-badge--ppt';
+    if (label === 'DOC') return 'sd-doc-badge--doc';
+    if (label === 'HTML') return 'sd-doc-badge--html';
     return 'sd-doc-badge--pdf';
-  }
-
-  /** Return display-friendly type label (max 4 chars) */
-  function typeLabel(type) {
-    var t = String(type || '').toUpperCase();
-    if (t === 'DOCX') return 'DOC';
-    if (t === 'PPTX') return 'PPT';
-    if (t === 'XLSX') return 'XLS';
-    return t.substring(0, 4);
   }
 
   function filenameFromUrl(url) {
@@ -213,17 +251,15 @@
 
   function isPdfDoc(doc, filePath) {
     if (!doc) return false;
-    var type = String(doc.type || '').toUpperCase();
-    var path = String(filePath || '').toLowerCase();
-    return type === 'PDF' || path.slice(-4) === '.pdf';
+    var ext = getDocFormatExtension(doc);
+    return ext === 'PDF';
   }
 
   function buildDocCard(doc) {
     if (!doc) return el('div', { textContent: 'Invalid Document Data' });
 
-    var type     = getDocType(doc);
     var filePath = (doc.filePath && typeof doc.filePath === 'string') ? doc.filePath.trim() : '';
-    var filename = filePath ? filenameFromUrl(filePath) : '';
+    var filename = doc.fileName || (filePath && !filePath.startsWith('/api/') ? filenameFromUrl(filePath) : '');
 
     var cardAttrs = { className: 'sd-doc-card' };
     if (doc.id) {
@@ -231,7 +267,7 @@
       cardAttrs['data-doc-id'] = doc.id;
     }
 
-    var badge = el('div', { className: 'sd-doc-badge ' + getBadgeClass(type), textContent: typeLabel(type) });
+    var badge = el('div', { className: 'sd-doc-badge ' + getBadgeClass(doc), textContent: typeLabel(doc) });
 
     var label = el('div', { className: 'sd-doc-label', textContent: doc.documentName || filename || 'document' });
     
@@ -243,7 +279,7 @@
       ? el('div', { className: 'sd-doc-desc', textContent: doc.description })
       : null;
       
-    var fname = filePath 
+    var fname = filename 
       ? el('span', { className: 'sd-doc-filename', textContent: filename })
       : null;
 
