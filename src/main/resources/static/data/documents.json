@@ -662,7 +662,7 @@
     "process": "MAN.6",
     "documentName": "MAN.6 Measurement & CSAT Feedback Template",
     "version": "1.0",
-    "description": "Spreadsheet template for project measurement and customer satisfaction tracking. Includes sheets for KPI definitions, monthly measurement data entry, trend charts, CSAT survey results aggregation, and management reporting summary.",
+    "description": "Spreadsheet template for project measurement and customer satisfaction tracking. Includes sheets for KPI definitions, monthly measurement data entry, CSAT survey results aggregation, and management reporting summary.",
     "filePath": "documents/aspice-prm/MAN/man6/ProjectName_CSAT_Feedback.xlsx",
     "type": "XLSX"
   },
